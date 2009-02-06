@@ -1,0 +1,11 @@
+--- a/sql/Makefile.in	2008-11-14 11:57:21.000000000 -0500
++++ b/sql/Makefile.in	2009-01-30 18:29:58.000000000 -0500
+@@ -734,7 +734,7 @@ clean-libexecPROGRAMS:
+ 	done
+ gen_lex_hash$(EXEEXT): $(gen_lex_hash_OBJECTS) $(gen_lex_hash_DEPENDENCIES) 
+ 	@rm -f gen_lex_hash$(EXEEXT)
+-	$(gen_lex_hash_LINK) $(gen_lex_hash_OBJECTS) $(gen_lex_hash_LDADD) $(LIBS)
++	gcc $(CXXFLAGS) -I../include -I/usr/include -L/usr/lib/mysql -lmysqlclient -o gen_lex_hash gen_lex_hash.cc 
+ mysql_tzinfo_to_sql$(EXEEXT): $(mysql_tzinfo_to_sql_OBJECTS) $(mysql_tzinfo_to_sql_DEPENDENCIES) 
+ 	@rm -f mysql_tzinfo_to_sql$(EXEEXT)
+ 	$(mysql_tzinfo_to_sql_LINK) $(mysql_tzinfo_to_sql_OBJECTS) $(mysql_tzinfo_to_sql_LDADD) $(LIBS)

@@ -1,0 +1,10 @@
+config BR2_PACKAGE_MYSQL
+	bool "MySQL 5.1 client"
+	help
+	  MySQL client
+
+config BR2_PACKAGE_MYSQL_SERVER
+	bool "MySQL 5.1 server"
+	depends on BR2_PACKAGE_MYSQL
+	help
+	  MySQL server

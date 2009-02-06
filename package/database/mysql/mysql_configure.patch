@@ -1,0 +1,20 @@
+--- a/configure	2008-11-14 11:57:48.000000000 -0500
++++ b/configure	2009-01-30 18:27:20.000000000 -0500
+@@ -22968,12 +22968,12 @@ fi
+ 
+ # Enable the abi_check rule only if gcc is available
+ 
+-if test "$GCC" != "yes" || expr "$CC" : ".*icc.*"
+-then
++#if test "$GCC" != "yes" || expr "$CC" : ".*icc.*"
++#then
+   ABI_CHECK=""
+-else
+-  ABI_CHECK="abi_check"
+-fi
++#else
++#  ABI_CHECK="abi_check"
++#fi
+ 
+ 
+ 
