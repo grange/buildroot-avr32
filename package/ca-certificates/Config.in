@@ -1,0 +1,5 @@
+config BR2_PACKAGE_CA_CERTIFICATES
+	bool "ssl certificates"
+	default n
+	help
+	  SSL certificates for OpenSSL
