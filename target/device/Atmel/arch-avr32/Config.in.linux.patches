@@ -2,7 +2,7 @@ choice
 	prompt "Add AVR32 specific patches"
 	depends on BR2_KERNEL_ARCH_PATCH_ENABLED
 	depends on BR2_avr32
-	default BR2_ARCH_AVR32_2_6_27_6		if BR2_LINUX_2_6_27_6
+	default BR2_ARCH_AVR32_2_6_24_7		if BR2_LINUX_2_6_24_7
 	default BR2_ARCH_AVR32_2_6_28_2
 	help
 	  Select a patch to add to the Linux kernel
@@ -12,10 +12,10 @@ config	BR2_ARCH_AVR32_2_6_28_2
 	help
 	  Apply the avr32 linux-2.6.28.2 patches
 
-config	BR2_ARCH_AVR32_2_6_27_6
-	bool "2.6.27.6"
+config	BR2_ARCH_AVR32_2_6_24_7
+	bool "2.6.24.7"
 	help
-	  Apply the avr32 linux-2.6.27.6 patches
+	  Apply the avr32 linux-2.6.24.7 patches
 
 endchoice
 
@@ -24,7 +24,7 @@ config	BR2_KERNEL_ARCH_PATCH_VERSION
 	depends on BR2_KERNEL_ARCH_PATCH_ENABLED
 	depends on BR2_avr32
 	default "2.6.28.2"	if BR2_ARCH_AVR32_2_6_28_2
-	default "2.6.27.6"	if BR2_ARCH_AVR32_2_6_27_6
+	default "2.6.24.7"	if BR2_ARCH_AVR32_2_6_24_7
 
 config	BR2_KERNEL_ARCH_PATCH_DIR
 	string
