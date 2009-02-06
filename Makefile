@@ -531,6 +531,13 @@ release: distclean
 	tar cfz $$OUT.tar.gz --exclude .svn --exclude .git --exclude \*~ $$OUT; \
 	rm -rf $$OUT
 
+# magical makefile debugging macros, use like this: make print-BR2_FOO_VAR 
+# courtesy of Dr. Dobbs
+print-%: ; @$(error $* is $($*) ($(value $*)) (from $(origin $*)))
+
+OLD_SHELL := $(SHELL)
+SHELL = $(warning [$@ ($^)($?)])$(OLD_SHELL)
+
 .PHONY: dummy subdirs release distclean clean config oldconfig \
 	menuconfig tags check test depend defconfig help
 
