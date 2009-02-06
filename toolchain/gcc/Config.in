@@ -20,7 +20,7 @@ endchoice
 
 config BR2_GCC_SUPPORTS_SYSROOT
 	bool
-	default n BR2_GCC_VERSION_4_1_2
+	default n if BR2_GCC_VERSION_4_1_2
 	default y if !BR2_GCC_VERSION_4_1_2
 
 config BR2_GCC_SUPPORTS_FINEGRAINEDMTUNE

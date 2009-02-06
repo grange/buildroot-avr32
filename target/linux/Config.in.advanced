@@ -34,40 +34,17 @@ source "target/linux/Config.in.versions"
 config BR2_KERNEL_PATCH_LEVEL
 	string
 	default $(BR2_KERNEL_LATEST_2_6_28) if BR2_LINUX_2_6_28 && BR2_KERNEL_ADD_LATEST_MINORPATCH
-	default $(BR2_KERNEL_LATEST_2_6_27) if BR2_LINUX_2_6_27 && BR2_KERNEL_ADD_LATEST_MINORPATCH
-	default $(BR2_KERNEL_LATEST_2_6_26) if BR2_LINUX_2_6_26 && BR2_KERNEL_ADD_LATEST_MINORPATCH
-	default $(BR2_KERNEL_LATEST_2_6_25) if BR2_LINUX_2_6_25 && BR2_KERNEL_ADD_LATEST_MINORPATCH
 	default $(BR2_KERNEL_LATEST_2_6_24) if BR2_LINUX_2_6_24 && BR2_KERNEL_ADD_LATEST_MINORPATCH
-	default $(BR2_KERNEL_LATEST_2_6_23) if BR2_LINUX_2_6_23 && BR2_KERNEL_ADD_LATEST_MINORPATCH
-	default $(BR2_KERNEL_LATEST_2_6_22) if BR2_LINUX_2_6_22 && BR2_KERNEL_ADD_LATEST_MINORPATCH
-	default $(BR2_KERNEL_LATEST_2_6_21) if BR2_LINUX_2_6_21 && BR2_KERNEL_ADD_LATEST_MINORPATCH
-	default $(BR2_KERNEL_LATEST_2_6_20) if BR2_LINUX_2_6_20 && BR2_KERNEL_ADD_LATEST_MINORPATCH
 	default "$(BR2_KERNEL_MINORLEVEL)" if BR2_KERNEL_ADD_MINORPATCH
 
 config BR2_KERNEL_NEXT_VERSION
 	string
-	default "2.6.29" if BR2_LINUX_2_6_28
-	default "2.6.28" if BR2_LINUX_2_6_27
-	default "2.6.27" if BR2_LINUX_2_6_26
-	default "2.6.26" if BR2_LINUX_2_6_25
-	default "2.6.25" if BR2_LINUX_2_6_24
-	default "2.6.24" if BR2_LINUX_2_6_23
-	default "2.6.23" if BR2_LINUX_2_6_22
-	default "2.6.22" if BR2_LINUX_2_6_21
-	default "2.6.21" if BR2_LINUX_2_6_20
+	default "2.6.28" if BR2_LINUX_2_6_24
 
 config BR2_KERNEL_THIS_VERSION
 	string
-	default "2.6.29" if BR2_LINUX_2_6_29
 	default "2.6.28" if BR2_LINUX_2_6_28
-	default "2.6.27" if BR2_LINUX_2_6_27
-	default "2.6.26" if BR2_LINUX_2_6_26
-	default "2.6.25" if BR2_LINUX_2_6_25
 	default "2.6.24" if BR2_LINUX_2_6_24
-	default "2.6.23" if BR2_LINUX_2_6_23
-	default "2.6.22" if BR2_LINUX_2_6_22
-	default "2.6.21" if BR2_LINUX_2_6_21
-	default "2.6.20" if BR2_LINUX_2_6_20
 
 config BR2_KERNEL_SITE
 	string
@@ -133,40 +110,8 @@ config BR2_LINUX_2_6_28
 	bool "Linux 2.6.28"
 	select BR2_KERNEL_BASE
 
-config BR2_LINUX_2_6_27
-	bool "Linux 2.6.27"
-	select BR2_KERNEL_BASE
-
-config BR2_LINUX_2_6_26
-	bool "Linux 2.6.26"
-	select BR2_KERNEL_BASE
-
-config BR2_LINUX_2_6_25
-	bool "Linux 2.6.25"
-	select BR2_KERNEL_BASE
-
 config BR2_LINUX_2_6_24
 	bool "Linux 2.6.24"
-	select BR2_KERNEL_BASE
-
-config BR2_LINUX_2_6_23
-	bool "Linux 2.6.23"
-	select BR2_KERNEL_BASE
-
-config BR2_LINUX_2_6_22
-	bool "Linux 2.6.22"
-	select BR2_KERNEL_BASE
-
-config BR2_LINUX_2_6_21
-	bool "Linux 2.6.21"
-	select BR2_KERNEL_BASE
-
-config BR2_LINUX_2_6_20
-	bool "Linux 2.6.20"
-	select BR2_KERNEL_BASE
-
-config BR2_LINUX_2_6_29
-	bool "Linux 2.6.29"
 	select BR2_KERNEL_BASE
 
 config BR2_LINUX26_CUSTOM
