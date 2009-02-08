@@ -45,6 +45,8 @@ DBUS_CONF_OPT = --target=$(GNU_TARGET_NAME) \
 		--with-system-socket=/var/run/dbus/system_bus_socket \
 		--with-system-pid-file=/var/run/messagebus.pid 
 
+DBUS_INSTALL_TARGET_OPT = DESTDIR=$(TARGET_DIR) install
+
 DBUS_DEPENDENCIES = uclibc $(DBUS_XML_DEP) pkgconfig
 
 $(eval $(call AUTOTARGETS,package,dbus))
