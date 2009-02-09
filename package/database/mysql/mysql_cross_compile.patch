@@ -5,7 +5,7 @@
  gen_lex_hash$(EXEEXT): $(gen_lex_hash_OBJECTS) $(gen_lex_hash_DEPENDENCIES) 
  	@rm -f gen_lex_hash$(EXEEXT)
 -	$(gen_lex_hash_LINK) $(gen_lex_hash_OBJECTS) $(gen_lex_hash_LDADD) $(LIBS)
-+	gcc -I../include -I/usr/include -L/usr/lib/mysql -lmysqlclient -o gen_lex_hash gen_lex_hash.cc 
++	gcc -I../include -I/usr/include -L/lib -L/usr/lib -L/usr/lib/mysql -lstdc++ -lmysqlclient -o gen_lex_hash gen_lex_hash.cc 
  mysql_tzinfo_to_sql$(EXEEXT): $(mysql_tzinfo_to_sql_OBJECTS) $(mysql_tzinfo_to_sql_DEPENDENCIES) 
  	@rm -f mysql_tzinfo_to_sql$(EXEEXT)
  	$(mysql_tzinfo_to_sql_LINK) $(mysql_tzinfo_to_sql_OBJECTS) $(mysql_tzinfo_to_sql_LDADD) $(LIBS)
