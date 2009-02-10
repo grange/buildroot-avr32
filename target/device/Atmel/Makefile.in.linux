@@ -1,2 +1,0 @@
-include target/device/Atmel/arch-avr32/arch-avr32.mk
-

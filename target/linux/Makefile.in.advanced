@@ -284,16 +284,16 @@ ifeq ($(BR2_PACKAGE_OPENSWAN),y)
 endif
 	touch $@
 
-$(LINUX26_DIR)/.patched.arch: $(LINUX26_DIR)/.patched
+$(LINUX26_DIR)/.patched.arch: $(LINUX26_DIR)/.patched $(KERNEL_COND_PATCHES)
 ifneq ($(BR2_KERNEL_ARCH_PATCH_DIR),)
 	if [ -d $(KERNEL_ARCH_PATCH_DIR) ] ; then \
 	toolchain/patch-kernel.sh $(LINUX26_DIR) $(KERNEL_ARCH_PATCH_DIR) \
-		linux-$(LINUX26_VERSION)\*.patch{,.gz,.bz2} ; \
+		linux-\*.patch{,.gz,.bz2} ; \
 	fi
 endif
 	touch $@
 
-$(LINUX26_DIR)/.patched.board: $(LINUX26_DIR)/.patched.arch $(KERNEL_COND_PATCHES)
+$(LINUX26_DIR)/.patched.board: $(LINUX26_DIR)/.patched.arch
 ifneq ($(LINUX26_PATCH_DIR),)
 	if [ -d $(LINUX26_PATCH_DIR) ] ; then \
 	toolchain/patch-kernel.sh $(LINUX26_DIR) $(LINUX26_PATCH_DIR) \
