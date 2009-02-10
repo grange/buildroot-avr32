@@ -29,7 +29,7 @@ $(XAPP_XMAN_DIR)/.configured: $(XAPP_XMAN_DIR)/.patched
 		CFLAGS="$(TARGET_CFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
 		STAGING_DIR=$(STAGING_DIR) \
- \
+		ac_cv_file__etc_man_conf=yes \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
@@ -49,10 +49,8 @@ $(XAPP_XMAN_DIR)/.built: $(XAPP_XMAN_DIR)/.configured
 	touch $@
 
 $(XAPP_XMAN_DIR)/.installed: $(XAPP_XMAN_DIR)/.built
-	$(MAKE) prefix=$(TARGET_DIR)/usr -C $(XAPP_XMAN_DIR) install-exec
-	$(MAKE) prefix=$(STAGING_DIR)/usr -C $(XAPP_XMAN_DIR) install
-	toolchain/replace.sh $(STAGING_DIR)/usr/lib ".*\.la" "\(['= ]\)/usr" "\\1$(STAGING_DIR)/usr"
-	find $(TARGET_DIR)/usr -name '*.la' -print -delete
+	$(MAKE) DESTDIR=$(TARGET_DIR) -C $(XAPP_XMAN_DIR) install-exec
+	$(MAKE) DESTDIR=$(STAGING_DIR) -C $(XAPP_XMAN_DIR) install
 	touch $@
 
 xapp_xman-clean:
