@@ -20,6 +20,7 @@ $(OPENMOTIF_DIR)/.unpacked: $(DL_DIR)/$(OPENMOTIF_SOURCE)
 	$(OPENMOTIF_CAT) $(DL_DIR)/$(OPENMOTIF_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	$(CONFIG_UPDATE) $(OPENMOTIF_DIR)
 	cp -a $(OPENMOTIF_DIR) $(OPENMOTIF_DIR)-host
+	toolchain/patch-kernel.sh $(OPENMOTIF_DIR) package/ \buildroot-libtool.patch
 	toolchain/patch-kernel.sh $(OPENMOTIF_DIR) package/openmotif/ \*.patch
 	touch $(OPENMOTIF_DIR)/.unpacked
 
@@ -51,7 +52,7 @@ $(OPENMOTIF_DIR)/.configured: $(OPENMOTIF_HOST_DIR)/.configured
 		--mandir=/usr/man \
 		--infodir=/usr/info \
 		--includedir=/usr/include \
-		--with-x --program-prefix="" \
+		--with-x LDFLAGS="-L$(STAGING_DIR)/lib" --program-prefix="" \
 	);
 	touch $(OPENMOTIF_DIR)/.configured
 
@@ -61,12 +62,14 @@ $(OPENMOTIF_HOST_DIR)/.done: $(OPENMOTIF_DIR)/.configured
 	ln -s -f $(OPENMOTIF_HOST_DIR)/tools/wml/wmluiltok $(OPENMOTIF_DIR)/tools/wml/wmluiltok-host
 	ln -s -f $(OPENMOTIF_HOST_DIR)/tools/wml/wml $(OPENMOTIF_DIR)/tools/wml/wml-host
 	ln -s -f $(OPENMOTIF_HOST_DIR)/tools/wml/wmldbcreate $(OPENMOTIF_DIR)/tools/wml/wmldbcreate-host
+	ln -s -f $(OPENMOTIF_HOST_DIR)/demos/lib/Exm/wml/wmldbcreate $(OPENMOTIF_DIR)/demos/lib/Exm/wml/wmldbcreate-host
 	mkdir -p $(OPENMOTIF_DIR)/tools/wml/.libs
 	ln -s -f $(OPENMOTIF_HOST_DIR)/tools/wml/.libs/lt-wmldbcreate $(OPENMOTIF_DIR)/tools/wml/.libs/lt-wmldbcreate-host
 	mkdir -p $(OPENMOTIF_DIR)/demos/lib/Exm/wml/.libs
 	ln -s -f $(OPENMOTIF_HOST_DIR)/demos/lib/Exm/wml/.libs/lt-wmldbcreate $(OPENMOTIF_DIR)/demos/lib/Exm/wml/.libs/lt-wmldbcreate-host
 	mkdir -p $(OPENMOTIF_DIR)/clients/uil/.libs
 	ln -s -f $(OPENMOTIF_HOST_DIR)/clients/uil/.libs/lt-uil $(OPENMOTIF_DIR)/clients/uil/.libs/lt-uil-host
+	ln -s -f $(OPENMOTIF_HOST_DIR)/clients/uil/uil $(OPENMOTIF_DIR)/clients/uil/uil-host
 	touch $(OPENMOTIF_HOST_DIR)/.done
 
 $(OPENMOTIF_DIR)/.done: $(OPENMOTIF_HOST_DIR)/.done

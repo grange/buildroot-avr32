@@ -86,6 +86,117 @@
  #line 183 "wmluiltok.l"
 
 
+--- a/tools/wml/Makefile.in	2009-02-10 07:43:20.000000000 -0500
++++ a/tools/wml/Makefile.in	2009-02-10 08:04:03.000000000 -0500
+@@ -640,7 +640,7 @@ $(WMLTARGETS): wmluiltok wml UilLexPars.
+ all: motif.wmd
+ 
+ motif.wmd: wmldbcreate
+-	./wmldbcreate -o motif.wmd
++	./wmldbcreate-host -o motif.wmd
+ 
+ clean-local:
+ 	$(RM) $(WMLTARGETS) $(WMDTABLE) $(REPORT) lex.yy.c libwml.a wml \
+
+--- a/demos/lib/Exm/wml/Makefile.am	2009-02-10 08:12:29.000000000 -0500
++++ a/demos/lib/Exm/wml/Makefile.am	2009-02-10 08:25:56.000000000 -0500
+@@ -27,7 +27,7 @@ all: Exm.wmd
+ WMDTABLE = Exm.wmd
+ 
+ $(WMDTABLE): wmldbcreate $(TARGETS)
+-	./wmldbcreate -o $@
++	./wmldbcreate-host -o $@
+ 
+ 
+ # INCLUDES = -I. -I$(INCLUDESRC) -I$(MINCLUDESRC) -I$(MLIBSRC) -I../../. -I$(MTOP)/include
+
+--- a/demos/programs/animate/Makefile.am	2002-02-23 08:05:44.000000000 -0500
++++ b/demos/programs/animate/Makefile.am	2009-02-10 08:38:12.000000000 -0500
+@@ -25,16 +25,16 @@ INCLUDES = -I$(srcdir)/../../../lib \
+ all: dog.uid plane.uid superman.uid xmanimate.uid
+ 
+ dog.uid: dog.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ plane.uid: plane.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ superman.uid: superman.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ xmanimate.uid: xmanimate.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ clean-local:
+ 	$(RM) periodic.uid
+
+--- a/demos/programs/fileview/Makefile.am	2002-02-23 09:26:25.000000000 -0500
++++ b/demos/programs/fileview/Makefile.am	2009-02-10 09:06:24.000000000 -0500
+@@ -17,13 +17,13 @@ INCLUDES = -I$(srcdir)/../../../lib ${X_
+ all: French.uid German.uid English.uid
+ 
+ French.uid: French.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ German.uid: German.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ English.uid: English.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ clean-local:
+ 	$(RM) French.uid German.uid English.uid
+
+--- a/demos/programs/hellomotif/Makefile.am	2002-02-23 08:05:45.000000000 -0500
++++ b/demos/programs/hellomotif/Makefile.am	2009-02-10 09:08:38.000000000 -0500
+@@ -12,7 +12,7 @@ INCLUDES = -I$(srcdir)/../../../lib ${X_
+ all: hellomotif.uid
+ 
+ hellomotif.uid: hellomotif.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ clean-local:
+ 	$(RM) hellomotif.uid
+
+--- a/demos/programs/periodic/Makefile.am	2002-03-02 19:15:19.000000000 -0500
++++ b/demos/programs/periodic/Makefile.am	2009-02-10 09:09:57.000000000 -0500
+@@ -13,7 +13,7 @@ INCLUDES = -I$(srcdir)/../../../lib ${X_
+ all: periodic.uid
+ 
+ periodic.uid: periodic.uil
+-	../../../clients/uil/uil -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
++	../../../clients/uil/uil-host -o $@ $< -I$(srcdir)/../../../clients/uil -I../../../clients/uil
+ 
+ clean-local:
+ 	$(RM) periodic.uid
+
+--- a/demos/programs/hellomotifi18n/Makefile.am	2002-02-23 08:05:45.000000000 -0500
++++ b/demos/programs/hellomotifi18n/Makefile.am	2009-02-10 09:12:48.000000000 -0500
+@@ -16,4 +16,4 @@ LDADD = $(top_builddir)/lib/Mrm/libMrm.l
+ SUFFIXES = .uil .uid
+ 
+ .uil.uid:
+-	$(top_builddir)/clients/uil/uil $< -I$(srcdir) -o $@
++	$(top_builddir)/clients/uil/uil-host $< -I$(srcdir) -o $@
+
+--- a/demos/unsupported/dogs/Makefile.am	2002-02-23 08:05:46.000000000 -0500
++++ b/demos/unsupported/dogs/Makefile.am	2009-02-10 09:14:27.000000000 -0500
+@@ -23,6 +23,6 @@ INCLUDES = -I$(srcdir)/../../../lib ${X_
+ SUFFIXES = .uil .uid
+ 
+ .uil.uid:
+-	../../../clients/uil/uil $< -I$(srcdir) -o $@
++	../../../clients/uil/uil-host $< -I$(srcdir) -o $@
+
+
 --- a/ltmain.sh	2006-07-13 03:12:13.000000000 -0400
 +++ b/ltmain.sh	2008-02-27 14:50:40.000000000 -0500
 @@ -5427,13 +5427,13 @@ else
