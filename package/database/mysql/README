@@ -1,0 +1,13 @@
+To initialize the server on your target, follow these steps:
+
+adduser mysql
+mysql_install_db --user=mysql
+cd /usr; /usr/bin/mysqld_safe &
+mysqladmin -u root password 'your_password'
+mysql -u root -p
+
+use mysql;
+grant all privileges on *.* to root@localhost identified by 'your_password' with grant option;
+grant all privileges on *.* to root@"%" identified by 'your_password' with grant option;
+flush privileges;
+exit;
