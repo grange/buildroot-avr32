@@ -1,0 +1,6 @@
+config BR2_PACKAGE_AMPACHE
+	bool "ampache"
+	help
+	  Ampache is a Web-based Audio file manager.
+
+	  http://ampache.org
