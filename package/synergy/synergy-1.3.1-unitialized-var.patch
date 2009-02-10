@@ -1,0 +1,11 @@
+--- a/lib/net/CTCPSocket.cpp	2006-04-01 20:47:03.000000000 -0500
++++ a/lib/net/CTCPSocket.cpp	2009-02-10 09:36:33.000000000 -0500
+@@ -140,7 +140,7 @@ CTCPSocket::read(void* buffer, UInt32 n)
+ void
+ CTCPSocket::write(const void* buffer, UInt32 n)
+ {
+-	bool wasEmpty;
++	bool wasEmpty = false;
+ 	{
+ 		CLock lock(&m_mutex);
+ 
