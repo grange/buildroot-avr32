@@ -19,7 +19,7 @@ LIGHTTPD_CONF_OPT = \
 	--libdir=/usr/lib/lighttpd \
 	--libexecdir=/usr/lib \
 	--localstatedir=/var \
-	--program-prefix="" \
+	--program-prefix="" STRIP=$(TARGET_STRIP) \
 	$(DISABLE_IPV6) \
 	$(LIGHTTPD_LFS)
 
