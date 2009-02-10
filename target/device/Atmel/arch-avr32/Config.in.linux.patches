@@ -28,6 +28,6 @@ config	BR2_KERNEL_ARCH_PATCH_VERSION
 
 config	BR2_KERNEL_ARCH_PATCH_DIR
 	string
-	default "target/device/Atmel/arch-avr32/kernel-patches-$(BR2_KERNEL_ARCH_PATCH_VERSION)"
+	default "target/device/Atmel/arch-avr32/kernel-patches"
 
 
