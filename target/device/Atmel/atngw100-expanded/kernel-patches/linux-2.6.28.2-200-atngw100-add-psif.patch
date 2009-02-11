@@ -1,0 +1,12 @@
+--- a/arch/avr32/boards/atngw100/setup.c	2008-01-31 13:38:32.000000000 -0500
++++ b/arch/avr32/boards/atngw100/setup.c	2008-01-31 13:44:09.000000000 -0500
+@@ -224,6 +224,9 @@ static int __init atngw100_init(void)
+ 	at32_add_device_usba(0, NULL);
+ 	at32_add_device_ac97c(0);
+ 
++	at32_add_device_psif(0);
++	at32_add_device_psif(1);
++
+ 	for (i = 0; i < ARRAY_SIZE(ngw_leds); i++) {
+ 		at32_select_gpio(ngw_leds[i].gpio,
+ 				AT32_GPIOF_OUTPUT | AT32_GPIOF_HIGH);
