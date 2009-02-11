@@ -1,5 +1,11 @@
 config BR2_PACKAGE_AMPACHE
 	bool "ampache"
+	select BR2_PACKAGE_PHP
+	select BR2_PACKAGE_PHP_CGI
+	select BR2_PACKAGE_PHP_EXT_PDO_MYSQL
+	select BR2_PACKAGE_MYSQL
+	select BR2_PACKAGE_LIGHTTPD
+
 	help
 	  Ampache is a Web-based Audio file manager.
 
