@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Wed Feb 11 13:43:54 2009
+# Wed Feb 11 16:09:23 2009
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_VERSION="2009.02-rc3"
@@ -154,11 +154,11 @@ BR2_EXT_UCLIBC_VERSION_0_9_30=y
 #
 # Kernel Header Options
 #
-BR2_KERNEL_HEADERS_2_6_24=y
-# BR2_KERNEL_HEADERS_2_6_28 is not set
+# BR2_KERNEL_HEADERS_2_6_24 is not set
+BR2_KERNEL_HEADERS_2_6_28=y
 # BR2_KERNEL_HEADERS_SNAP is not set
 # BR2_KERNEL_HEADERS_PATCH_DIR is not set
-BR2_DEFAULT_KERNEL_HEADERS="2.6.24.7"
+BR2_DEFAULT_KERNEL_HEADERS="2.6.28.2"
 
 #
 # uClibc Options
