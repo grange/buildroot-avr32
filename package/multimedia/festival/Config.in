@@ -1,11 +1,15 @@
-menuconfig BR2_PACKAGE_FESTIVAL
+menuconfig BR2_PACKAGE_FESTIVAL_SYSTEM
 bool "festival text-to-speech system"
 select BR2_PACKAGE_ALSA_LIB
 select BR2_PACKAGE_SPEECH_TOOLS
 help
 	Text to speech system for Linux
 
-if BR2_PACKAGE_FESTIVAL
+if BR2_PACKAGE_FESTIVAL_SYSTEM
+
+	menu "speech engine"
+		source "package/multimedia/festival/Config.engine.in"
+	endmenu
 
 	menu "speech tools"
 		source "package/multimedia/festival/speech-tools/Config.in"
