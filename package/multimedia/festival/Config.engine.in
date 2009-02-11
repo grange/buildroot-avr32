@@ -1,0 +1,13 @@
+config BR2_PACKAGE_FESTIVAL
+	bool "full festival engine"
+	help
+	  The full version of the festival text to speech system
+
+	  http://festvox.org/packed/festival/latest
+
+config BR2_PACKAGE_FLITE
+	bool "flite festival engine"
+	help
+	  The smaller lite version of the festival text to speech system
+
+	  http://festvox.org/packed/festival/latest
