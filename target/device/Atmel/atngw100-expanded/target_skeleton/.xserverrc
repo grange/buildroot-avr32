@@ -1,0 +1,1 @@
+exec /usr/bin/Xfbdev -mouse mouse,/dev/mouse0 -keybd keyboard,/dev/tty0 -ac -noreset &>/dev/null

@@ -15,6 +15,7 @@
 
 # Run a shell on the first serial port. Comment out if you want a getty instead.
 ttyS0::respawn:-/bin/sh
+tty0::respawn:-/bin/sh
 
 # Run a shell on the g_serial port (USB gadget device)? This shell will spawn
 # error message if the device is not connected.

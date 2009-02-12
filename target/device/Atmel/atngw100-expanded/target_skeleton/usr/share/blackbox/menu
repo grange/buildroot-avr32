@@ -1,0 +1,132 @@
+# This is the default menu file for Blackbox 0.33.0 and up
+# 
+# Lines beginning with the '#' character are ignored.
+#
+# The new syntax is simpler than the old X resource format...
+# Each menu item consists of 2 or 3 fields:
+#
+#	[command]  (label)  {data}
+#
+# where [command] is one of:
+#
+#   [begin] [end] [exec] [exit] [reconfig] [restart] [submenu] 
+#   [style] [stylesdir] [include] [workspaces] [config]
+#
+# [begin] is used for the top level menu
+# [submenu] is used for submenus
+# [end] must be used with BOTH [begin] and [submenu] to tell the parser to stop
+#   reading from the file.
+#
+# [exec] (label) {string}
+# This will insert an item that runs a program.
+#
+# [exit] (label)
+# This will insert an item that exits the window manager.
+#
+# [reconfig] (label) {string}
+# This will insert an item that tells blackbox to re-read it's configuration
+#  files.  {string} is optional, and if supplied, will execute the string with
+#  /bin/sh -c before the reconfiguration is performed.  (this is helpful for
+#  writing multiple config files and switching between them)
+#
+# [restart] (label) {string}
+# This will insert an item to restart the window manager.  {string} is
+# optional, and if omitted, blackbox will restart itself.  If {string} is
+# specified, then a different window manager will be started.
+#
+# [style] (filename)
+# This will insert an item to reconfigure blackbox with the new style. This
+# change is saved when blackbox exits or restarts.
+#
+# [include] (filename)
+# This will read more menu items from the file "filename".  The file cannot
+# contain a [begin] or [end], except for the [end] needed for submenus.
+#
+# [workspaces] (label)
+# This tells Blackbox to insert a "link" to the workspaces menu directly
+# into your menu.
+#
+# [config] (label)
+# This tells Blackbox to insert the ConfigMenu into your menu.  The ConfigMenu
+# allows you to change several options found in your ~/.blackboxrc file on the
+# fly.
+#
+
+[begin] (Blackbox)
+  [exec] (Console)     		{rxvt}
+  [submenu] (Internet)
+    [exec] (Midori Web Browser) {midori}
+    [exec] (Email)		{sylpheed}
+  [end]
+  [submenu] (Applications)
+    [exec] (ngSPICE)		{rxvt -e /usr/bin/ngspice}
+    [exec] (Festival)		{rxvt -e /usr/bin/festival}
+    [exec] (File Manager)	{pcmanfm}
+    [exec] (Text Editor)	{leafpad}
+  [end]
+  [submenu] (Graphics)
+    [exec] (Image Viewer)	{gqview}
+    [exec] (PDF Viewer)		{xpdf}
+  [end]
+  [submenu] (Multimedia)
+    [exec] (Media Player)	{gmplayer}
+    [exec] (Mixer)		{alsamixergui}
+  [end]    
+  [submenu] (Games)
+    [exec] (Checkers)		{/usr/games/checkers}
+    [exec] (Chess)		{xboard}
+    [exec] (DOOM) 		{/usr/games/lxdoom -iwad /usr/games/doom-1.8.wad -width 640 -height 480}
+    [exec] (VIC-20)		{xvic}
+    [exec] (C64)		{x64}
+    [exec] (C128)		{x128}
+    [exec] (Magic Cube 4D)	{/usr/games/magiccube4d}
+    [exec] (Rubix)		{/usr/games/rubix}
+	[submenu] (Ace of Penguins)
+ 		[exec] (Canfield)	{canfield}
+		[exec] (Freecell)	{freecell}
+		[exec] (Golf) 		{golf}
+		[exec] (Mastermind)	{mastermind}
+		[exec] (Merlin)		{merlin}
+		[exec] (Minesweeper)	{minesweeper}
+		[exec] (Pegged)		{pegged}
+		[exec] (Solitaire)	{solitaire}
+		[exec] (Taipei)		{taipei}
+		[exec] (Taipei Editor)	{taipedit}
+		[exec] (Thornq)		{thornq}
+	[end]		
+  [end]  
+  [submenu] (X Utilities)
+    [exec] (Keyboard)		{xvkbd}
+    [exec] (Kill)    		{xkill}
+    [exec] (Refresh)		{xrefresh}
+    [exec] (Font Select)	{xfontsel}
+    [exec] (Help Viewer)	{xman}
+    [exec] (Calculator)    	{xcalc}
+    [exec] (Text Editor)	{xedit}
+    [exec] (Tray)     		{docker}
+    [exec] (Handwriting)  	{xstroke -noauto}
+    [exec] (System Monitor)	{torsmo}
+  [end]
+  [submenu] (Services)
+    [exec] (Telnet)		{/etc/init.d/S20telnet}
+    [exec] (Firewall)		{/etc/init.d/S11iptables}
+    [exec] (DNSmasq)		{/etc/init.d/S15dnsmasq}
+    [exec] (Samba Sharing)	{/etc/init.d/S20samba}
+    [exec] (Web Server)		{/etc/init.d/S91httpd}
+  [end]
+  [submenu] (Styles) {Choose a style...}
+    [stylesdir] (/usr/share/blackbox/styles)
+  [end]
+
+  [workspaces] (Workspace List)
+  [config] (Configuration)
+
+  [reconfig] (Reconfigure)
+  [restart] (Restart Blackbox)
+  [exec] (Shutdown) {halt}
+  [exec] (Reboot) {reboot}
+  [exit] (Exit)
+[end]
+
+# End of example menu.
+
