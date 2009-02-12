@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBERTAS_TOOLS
+	bool "libertas-tools"
+	default n
+	help
+	  tools for using and troubleshooting 
+	  libertas wireless drivers
+
+	  git://git.infradead.org/users/schurig
