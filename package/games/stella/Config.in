@@ -1,0 +1,6 @@
+config BR2_PACKAGE_STELLA
+	bool "stella"
+	help
+	  Atari 2600 VCS emulator
+
+	  http://superb-west.dl.sourceforge.net/sourceforge/stella
