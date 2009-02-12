@@ -1,0 +1,10 @@
+--- a/Makefile	2005-11-01 08:40:45.000000000 -0500
++++ b/Makefile	2009-02-12 08:04:24.000000000 -0500
+@@ -109,7 +109,6 @@ install:
+ 	mkdir -p $(INSTALLLIBDIR)
+ 	mkdir -p $(INSTALLINCDIR)
+ 	$(INSTALL) -m 644 include/*.h $(INSTALLINCDIR)
+-	@ $(MAKE) -C lib --no-print-directory install
+ 	$(INSTALL) -m 755 bin/flite $(INSTALLBINDIR)
+ 	$(INSTALL) -m 755 bin/flite_time $(INSTALLBINDIR)
+ 
