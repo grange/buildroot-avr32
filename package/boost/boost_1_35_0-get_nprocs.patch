@@ -1,0 +1,11 @@
+--- a/libs/thread/src/pthread/thread.cpp	2008-03-21 11:04:10.000000000 -0400
++++ b/libs/thread/src/pthread/thread.cpp	2008-07-08 08:47:03.000000000 -0400
+@@ -419,7 +419,7 @@ namespace boost
+ #if defined(PTW32_VERSION) || defined(__hpux)
+         return pthread_num_processors_np();
+ #elif defined(__linux__)
+-        return get_nprocs();
++        return sysconf (_SC_NPROCESSORS_ONLN); 
+ #elif defined(__APPLE__) || defined(__FreeBSD__)
+         int count;
+         size_t size=sizeof(count);
