@@ -1,22 +1,20 @@
 diff -Nwrup linux-2.6.25.10-orig/fs/cifs/cifspdu.h linux-2.6.25.10/fs/cifs/cifspdu.h
 --- linux-2.6.25.10-orig/fs/cifs/cifspdu.h	2008-07-02 23:46:47.000000000 -0400
 +++ linux-2.6.25.10/fs/cifs/cifspdu.h	2008-07-18 09:13:37.000000000 -0400
-@@ -385,9 +385,12 @@ struct smb_hdr {
- 	__u16 Mid;
+@@ -414,8 +414,10 @@ struct smb_hdr {
  	__u8 WordCount;
  } __attribute__((packed));
--/* given a pointer to an smb_hdr retrieve the value of byte count */
--#define BCC(smb_var) ( *(__u16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount)))
--#define BCC_LE(smb_var) ( *(__le16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount)))
-+
+ /* given a pointer to an smb_hdr retrieve the value of byte count */
+-#define BCC(smb_var) (*(__u16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount)))
+-#define BCC_LE(smb_var) (*(__le16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount)))
 +__u16 get_BCC(struct smb_hdr *smb_var);
 +__le16 get_BCC_LE(struct smb_hdr *smb_var);
 +void set_BCC(struct smb_hdr *smb_var, __u16 count);
 +void set_BCC_LE(struct smb_hdr *smb_var, __le16 count);
-+
  /* given a pointer to an smb_hdr retrieve the pointer to the byte area */
  #define pByteArea(smb_var) ((unsigned char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount) + 2)
  
+
 diff -Nwrup linux-2.6.25.10-orig/fs/cifs/cifssmb.c linux-2.6.25.10/fs/cifs/cifssmb.c
 --- linux-2.6.25.10-orig/fs/cifs/cifssmb.c	2008-07-02 23:46:47.000000000 -0400
 +++ linux-2.6.25.10/fs/cifs/cifssmb.c	2008-07-18 09:13:46.000000000 -0400
