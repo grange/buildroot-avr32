@@ -1,0 +1,7 @@
+config BR2_PACKAGE_AGG
+	bool "agg"
+	default n
+	help
+	  A High Quality Rendering Engine for C++
+
+	  http://www.antigrain.com
