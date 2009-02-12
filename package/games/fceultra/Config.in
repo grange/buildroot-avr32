@@ -1,0 +1,7 @@
+config BR2_PACKAGE_FCEULTRA
+	bool "fceultra"
+	default n
+	help
+	  Nintendo NES emulator
+
+	  http://internap.dl.sourceforge.net/sourceforge/fceultra
