@@ -1,0 +1,26 @@
+--- a/configure	2008-06-12 12:00:47.000000000 -0400
++++ b/configure	2008-07-07 15:41:11.000000000 -0400
+@@ -27554,7 +27554,7 @@ else
+ 
+     if test x"${with_gtk2_lib}" != x ; then
+       if test -f ${with_gtk2_lib}/libgtk-x11-2.0.${shlibext}; then
+-        if test -f ${with_gtk2_lib}/libgdk-x11-2.0; then
++        if test -f ${with_gtk2_lib}/libgdk-x11-2.0.${shlibext}; then
+         	ac_cv_path_gtk2_lib="-I`(cd ${with_gtk2_lib}; pwd)`"
+         else
+         	{ { echo "$as_me:$LINENO: error: ${with_gtk2_lib} directory doesn't contain libgdk-x11-2.0" >&5
+@@ -27784,11 +27784,11 @@ fi
+ else
+ 
+     if test x"${with_pango_lib}" != x ; then
+-      if test -f ${with_pango_lib}/libpangopango-x11-${gnash_pango_version}.a -o -f ${with_pango_lib}/libpangopango-x11-${gnash_pango_version}.${shlibext}; then
++      if test -f ${with_pango_lib}/libpangox-${gnash_pango_version}.a -o -f ${with_pango_lib}/libpangox-${gnash_pango_version}.${shlibext}; then
+ 	ac_cv_path_pango_lib=-L`(cd ${with_pango_lib}; pwd)`
+       else
+-	{ { echo "$as_me:$LINENO: error: ${with_pango_lib} directory doesn't contain libpangopango." >&5
+-echo "$as_me: error: ${with_pango_lib} directory doesn't contain libpangopango." >&2;}
++	{ { echo "$as_me:$LINENO: error: ${with_pango_lib} directory doesn't contain libpangox." >&5
++echo "$as_me: error: ${with_pango_lib} directory doesn't contain libpangox." >&2;}
+    { (exit 1); exit 1; }; }
+       fi
+     fi

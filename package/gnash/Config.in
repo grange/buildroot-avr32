@@ -1,0 +1,7 @@
+config BR2_PACKAGE_GNASH
+	bool "gnash"
+	default n
+	help
+	  Opensource flash player
+
+	  ftp://ftp.cise.ufl.edu/pub/mirrors/GNU/gnu/gnash/0.8.3
