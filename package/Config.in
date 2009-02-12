@@ -378,6 +378,7 @@ source "package/blackbox/Config.in"
 
 comment "X applications"
 source "package/alsamixergui/Config.in"
+source "package/cellwriter/Config.in"
 source "package/dillo/Config.in"
 source "package/docker/Config.in"
 source "package/gqview/Config.in"
