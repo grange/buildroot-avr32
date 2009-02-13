@@ -1,0 +1,75 @@
+--- a/configure	2008-03-30 20:59:30.000000000 -0400
++++ b/configure	2009-02-13 07:44:07.000000000 -0500
+@@ -284,10 +284,11 @@ case $_host in
+ #	_host_os=riscos
+ #	_host_cpu=arm
+ #	;;
+-#ppc-amigaos)
+-#	_host_os=amigaos
+-#	_host_cpu=ppc
+-#	;;
++avr32-linux)
++	_host_os=linux
++	_host_cpu=avr32
++	_host_prefix=avr32-linux
++	;;
+ gp2x)
+ 	_host_os=gp2x
+ 	_host_cpu=arm
+@@ -431,16 +432,17 @@ if test -n "$_host"; then
+ #			type_2_byte='short'
+ #			type_4_byte='int'
+ #			;;
+-#		ppc-amigaos)
+-#			echo "Cross-compiling to $_host, forcing endianness, alignment and type sizes"
+-#			_def_endianness='#define SCUMM_BIG_ENDIAN'
+-#			_def_align='#define	SCUMM_NEED_ALIGNMENT'
+-#			type_1_byte='char'
+-#			type_2_byte='short'
+-#			type_4_byte='long'
+-#			CXXFLAGS="$CFLAGS -newlib -mstrict-align -mcpu=750 -mtune=7400"
+-#			LDFLAGS="$LDFLAGS -newlib"
+-#			;;
++		avr32-linux)
++			echo "Cross-compiling to $_host, forcing endianness, alignment and type sizes"
++			_def_endianness='#define SCUMM_BIG_ENDIAN'
++			_def_align='#define	SCUMM_NEED_ALIGNMENT'
++			type_1_byte='char'
++			type_2_byte='short'
++			type_4_byte='long'
++			CXXFLAGS="$CFLAGS"
++			DEFINES="$DEFINES -DUNIX"
++			_host_os=unix
++			;;
+ 		gp2x)
+ 			echo "Cross-compiling to $_host, forcing static build, and disabling OpenGL."
+ 			_build_static=yes
+@@ -514,6 +516,7 @@ if test "$_zlib" = auto ; then
+ #include <zlib.h>
+ int main(void) { return strcmp(ZLIB_VERSION, zlibVersion()); }
+ EOF
++	echo "cc_check $LDFLAGS $CXXFLAGS $ZLIB_CFLAGS $ZLIB_LIBS -lz"
+ 	cc_check $LDFLAGS $CXXFLAGS $ZLIB_CFLAGS $ZLIB_LIBS -lz && _zlib=yes
+ fi
+ if test "$_zlib" = yes ; then
+@@ -688,7 +691,7 @@ case $_host_os in
+ 			_ar="arm-linux-ar cru"
+ 			;;
+ 		*)
+-			echo "WARNING: host system not currenty supported"
++			echo "WARNING: host $_host_os not currently supported"
+ 			exit
+ 			;;
+ esac
+
+--- a/Makefile	2009-01-11 16:31:21.000000000 -0500
++++ b/Makefile	2009-02-13 07:45:33.000000000 -0500
+@@ -163,7 +163,7 @@ config.mak: $(srcdir)/configure
+ 
+ install: all
+ 	$(INSTALL) -d "$(DESTDIR)$(BINDIR)"
+-	$(INSTALL) -c -s -m 755 "$(srcdir)/stella$(EXEEXT)" "$(DESTDIR)$(BINDIR)/stella$(EXEEXT)"
++	$(INSTALL) -c -m 755 "$(srcdir)/stella$(EXEEXT)" "$(DESTDIR)$(BINDIR)/stella$(EXEEXT)"
+ 	$(INSTALL) -d "$(DESTDIR)$(DOCDIR)"
+ 	$(INSTALL) -c -m 644 "$(srcdir)/Announce.txt" "$(srcdir)/Changes.txt" "$(srcdir)/Copyright.txt" "$(srcdir)/License.txt" "$(srcdir)/README-SDL.txt" "$(srcdir)/Readme.txt" "$(srcdir)/Todo.txt" "$(srcdir)/docs/index.html" "$(srcdir)/docs/debugger.html" "$(DESTDIR)$(DOCDIR)/"
+ 	$(INSTALL) -d "$(DESTDIR)$(DOCDIR)/graphics"
