@@ -41,7 +41,7 @@ GNASH_CONF_OPT = --with-sdl-incl=$(STAGING_DIR)/usr/include --with-sdl-lib=$(STA
 				--with-atk-incl=$(STAGING_DIR)/usr/include/atk-1.0 --with-atk-lib=$(STAGING_DIR)/usr/lib \
 				--with-jpeg-incl=$(STAGING_DIR)/usr/include --with-jpeg-lib=$(STAGING_DIR)/usr/lib \
 				--with-glib-incl=$(STAGING_DIR)/usr/include/glib-2.0 --with-glib-lib=$(STAGING_DIR)/usr/lib \
-				--with-gtk2-incl=$(STAGING_DIR)/usr/include/gtk-2.0 \
+				--with-gtk2-incl=$(STAGING_DIR)/usr/include/gtk-2.0 --enable-gui=gtk \
 				--with-pango-incl=$(STAGING_DIR)/usr/include/pango-1.0 --with-pango-lib=$(STAGING_DIR)/usr/lib \
 				--with-cairo-incl=$(STAGING_DIR)/usr/include/cairo --with-cairo-lib=$(STAGING_DIR)/usr/lib \
 				--with-png-incl=$(STAGING_DIR)/usr/include --with-png-lib=$(STAGING_DIR)/usr/lib \
