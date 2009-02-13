@@ -1,8 +1,8 @@
---- a/arch/avr32/mach-at32ap/include/mach/at32ap700x.h	2009-01-24 19:42:07.000000000 -0500
-+++ b/arch/avr32/mach-at32ap/include/mach/at32ap700x.h	2009-02-11 09:19:17.000000000 -0500
-@@ -157,6 +157,23 @@
- 		ATMEL_LCDC(PD, DATA20) | ATMEL_LCDC(PD, DATA21) |	\
- 		ATMEL_LCDC(PD, DATA22) | ATMEL_LCDC(PD, DATA23))
+--- a/arch/avr32/boards/atngw100/setup.c	2009-01-24 19:42:07.000000000 -0500
++++ b/arch/avr32/boards/atngw100/setup.c	2009-02-13 09:26:18.000000000 -0500
+@@ -29,6 +29,23 @@
+ #include <mach/init.h>
+ #include <mach/portmux.h>
  
 +#define ATMEL_LCDC_NGW100_PINMASK (					\
 +		ATMEL_LCDC(PC, HSYNC)  | ATMEL_LCDC(PC, PCLK)	|	\
@@ -21,6 +21,6 @@
 +		ATMEL_LCDC(PE, DATA19) | ATMEL_LCDC(PE, DATA20)	|	\
 +		ATMEL_LCDC(PE, DATA21))
 +
- #define ATMEL_LCDC_ALT_24B_DATA (					\
- 		ATMEL_LCDC(PE, DATA0)  | ATMEL_LCDC(PE, DATA1)  |	\
- 		ATMEL_LCDC(PE, DATA2)  | ATMEL_LCDC(PE, DATA3)  |	\
+ /* Oscillator frequencies. These are board-specific */
+ unsigned long at32_board_osc_rates[3] = {
+ 	[0] = 32768,	/* 32.768 kHz on RTC osc */
