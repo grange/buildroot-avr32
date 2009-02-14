@@ -36,6 +36,7 @@ $(WEBKIT_DIR)/.done: $(WEBKIT_DIR)/.configured
 	$(MAKE) -C $(WEBKIT_DIR) GLIB_GENMARSHAL=$(HOST_GLIB)/bin/glib-genmarshal \
 		GLIB_MKENUMS=$(HOST_GLIB)/bin/glib-mkenums
 	$(MAKE) -C $(WEBKIT_DIR) install DESTDIR=$(TARGET_DIR)
+	$(MAKE) -C $(WEBKIT_DIR) install DESTDIR=$(STAGING_DIR)
 	touch $@
 
 webkit: icu curl libxml2 libxslt libgtk2 sqlite $(WEBKIT_DIR)/.done
