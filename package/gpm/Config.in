@@ -1,0 +1,6 @@
+config BR2_PACKAGE_GPM
+	bool "gpm"
+	help
+	  GPM (General Purpose Mouse) is a mouse server for the console and xterm, with sample clients included
+
+	  http://launchpad.net/gpm/main/1.99.7/+download

@@ -131,6 +131,8 @@ endif
 
 LIBGTK2_MAKE_OPT = GLIB_GENMARSHAL=$(HOST_GLIB)/bin/glib-genmarshal GLIB_MKENUMS=$(HOST_GLIB)/bin/glib-mkenums
 
+LIBGTK2_INSTALL_TARGET_OPT = DESTDIR=$(TARGET_DIR) install
+
 $(eval $(call AUTOTARGETS,package,libgtk2))
 
 $(LIBGTK2_HOOK_POST_INSTALL):

@@ -3,7 +3,7 @@
 # alsa-utils
 #
 #############################################################
-ALSA_UTILS_VERSION:=1.0.18
+ALSA_UTILS_VERSION:=1.0.17
 ALSA_UTILS_SOURCE:=alsa-utils-$(ALSA_UTILS_VERSION).tar.bz2
 ALSA_UTILS_SITE:=ftp://ftp.alsa-project.org/pub/utils
 ALSA_UTILS_DIR:=$(BUILD_DIR)/alsa-utils-$(ALSA_UTILS_VERSION)
@@ -12,17 +12,16 @@ ALSA_UTILS_BINARY:=alsactl/alsactl
 ALSA_UTILS_TARGET_BINARY:=usr/sbin/alsactl
 
 $(DL_DIR)/$(ALSA_UTILS_SOURCE):
-	$(call DOWNLOAD,$(ALSA_UTILS_SITE),$(ALSA_UTILS_SOURCE))
+	$(WGET) -P $(DL_DIR) $(ALSA_UTILS_SITE)/$(ALSA_UTILS_SOURCE)
 
 $(ALSA_UTILS_DIR)/.unpacked: $(DL_DIR)/$(ALSA_UTILS_SOURCE)
 	$(ALSA_UTILS_CAT) $(DL_DIR)/$(ALSA_UTILS_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	toolchain/patch-kernel.sh $(ALSA_UTILS_DIR) package/multimedia/alsa-utils/ alsa-utils-$(ALSA_UTILS_VERSION)\*.patch
-	toolchain/patch-kernel.sh $(ALSA_UTILS_DIR) package/multimedia/alsa-utils/ alsa-utils-$(ALSA_UTILS_VERSION)\*.patch.$(ARCH)
+	toolchain/patch-kernel.sh $(ALSA_UTILS_DIR) package/alsa-utils/ alsa-utils-$(ALSA_UTILS_VERSION)\*.patch\*
 	$(CONFIG_UPDATE) $(ALSA_UTILS_DIR)
 	touch $@
 
 $(ALSA_UTILS_DIR)/.configured: $(ALSA_UTILS_DIR)/.unpacked
-	(cd $(ALSA_UTILS_DIR); rm -f config.cache; \
+	(cd $(ALSA_UTILS_DIR); rm -f config.cache; autoreconf; \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(TARGET_CONFIGURE_ARGS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -36,7 +35,7 @@ $(ALSA_UTILS_DIR)/.configured: $(ALSA_UTILS_DIR)/.unpacked
 	touch $@
 
 $(ALSA_UTILS_DIR)/$(ALSA_UTILS_BINARY): $(ALSA_UTILS_DIR)/.configured
-	$(MAKE) CC=$(TARGET_CC) -C $(ALSA_UTILS_DIR)
+	$(MAKE) CC=$(TARGET_CC) -C $(ALSA_UTILS_DIR) 
 	touch -c $@
 
 ALSA_UTILS_TARGETS_ :=
@@ -72,9 +71,7 @@ $(TARGET_DIR)/$(ALSA_UTILS_TARGET_BINARY): $(ALSA_UTILS_DIR)/$(ALSA_UTILS_BINARY
 	fi
 	touch -c $@
 
-alsa-utils: uclibc alsa-lib ncurses ncurses-headers $(if $(BR2_PACKAGE_LIBINTL),libintl) $(if $(BR2_PACKAGE_LIBICONV),libiconv) $(TARGET_DIR)/$(ALSA_UTILS_TARGET_BINARY)
-
-alsa-utils-unpacked: $(ALSA_UTILS_DIR)/.unpacked
+alsa-utils: uclibc alsa-lib ncurses $(TARGET_DIR)/$(ALSA_UTILS_TARGET_BINARY)
 
 alsa-utils-source: $(DL_DIR)/$(ALSA_UTILS_SOURCE)
 
@@ -94,6 +91,6 @@ alsa-utils-dirclean:
 # Toplevel Makefile options
 #
 #############################################################
-ifeq ($(BR2_PACKAGE_ALSA_UTILS),y)
+ifeq ($(strip $(BR2_PACKAGE_ALSA_UTILS)),y)
 TARGETS+=alsa-utils
 endif

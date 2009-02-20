@@ -56,7 +56,7 @@ GNASH_CONF_OPT = --with-sdl-incl=$(STAGING_DIR)/usr/include --with-sdl-lib=$(STA
 
 GNASH_INSTALL_TARGET_OPT = DESTDIR=$(TARGET_DIR) install
 
-GNASH_DEPENDENCIES = uclibc boost agg $(GNASH_GUI_DEP) gstreamer
+GNASH_DEPENDENCIES = uclibc boost agg libcurl $(GNASH_GUI_DEP) gstreamer
 
 $(eval $(call AUTOTARGETS,package,gnash))
 

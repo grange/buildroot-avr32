@@ -52,6 +52,8 @@ PANGO_CONF_OPT = --enable-shared --enable-static \
 		$(PANGO_CONF_OPT_X) \
 		--enable-explicit-deps=no --disable-debug
 
+PANGO_INSTALL_TARGET_OPT = DESTDIR=$(TARGET_DIR) install
+
 PANGO_DEPENDENCIES = uclibc gettext libintl pkgconfig libglib2 $(XSERVER) cairo
 
 $(eval $(call AUTOTARGETS,package,pango))

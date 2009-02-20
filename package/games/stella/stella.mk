@@ -11,12 +11,13 @@ STELLA_INSTALL_STAGING = NO
 STELLA_INSTALL_TARGET = YES
 
 STELLA_CONF_OPT = --with-zlib-prefix=$(STAGING_DIR)/usr --with-zlib-prefix=$(STAGING_DIR)/usr \
-					--prefix=/usr --bindir=/usr/bin --docdir=/usr/share/doc/stella --datadir=/usr/share 
+					--prefix=/usr --bindir=/usr/bin --docdir=/usr/share/doc/stella --datadir=/usr/share \
+					LDFLAGS="-lstdc++ -lc"
 					
 
 STELLA_INSTALL_TARGET_OPT = DESTDIR=$(TARGET_DIR) install
 
-STELLA_DEPENDENCIES = uclibc 
+STELLA_DEPENDENCIES = uclibc zlib sdl
 
 $(eval $(call AUTOTARGETS,package/games,stella))
 

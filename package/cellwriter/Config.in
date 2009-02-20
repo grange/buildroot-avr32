@@ -1,5 +1,6 @@
 config BR2_PACKAGE_CELLWRITER
 	bool "cellwriter"
+	depends on BR2_PACKAGE_LIBGTK2
 	help
 	  CellWriter is a grid-entry natural handwriting input panel
 
