@@ -1,0 +1,924 @@
+diff -Nwrup linux-2.6.25.10-orig/fs/cifs/cifspdu.h linux-2.6.25.10/fs/cifs/cifspdu.h
+--- linux-2.6.25.10-orig/fs/cifs/cifspdu.h	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/cifs/cifspdu.h	2008-07-18 09:13:37.000000000 -0400
+@@ -414,8 +414,10 @@ struct smb_hdr {
+ 	__u8 WordCount;
+ } __attribute__((packed));
+ /* given a pointer to an smb_hdr retrieve the value of byte count */
+-#define BCC(smb_var) (*(__u16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount)))
+-#define BCC_LE(smb_var) (*(__le16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount)))
++__u16 get_BCC(struct smb_hdr *smb_var);
++__le16 get_BCC_LE(struct smb_hdr *smb_var);
++void set_BCC(struct smb_hdr *smb_var, __u16 count);
++void set_BCC_LE(struct smb_hdr *smb_var, __le16 count);
+ /* given a pointer to an smb_hdr retrieve the pointer to the byte area */
+ #define pByteArea(smb_var) ((unsigned char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount) + 2)
+ 
+
+diff -Nwrup linux-2.6.25.10-orig/fs/cifs/cifssmb.c linux-2.6.25.10/fs/cifs/cifssmb.c
+--- linux-2.6.25.10-orig/fs/cifs/cifssmb.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/cifs/cifssmb.c	2008-07-18 09:13:46.000000000 -0400
+@@ -378,32 +378,38 @@ static int validate_t2(struct smb_t2_rsp
+ 	int rc = -EINVAL;
+ 	int total_size;
+ 	char *pBCC;
++	u16 BCC;
++	__le16 ParameterOffset, ParameterCount,
++			DataOffset, DataCount;
++	__u8 WordCount;
++	char *SMB = (char *)pSMB;
+ 
+ 	/* check for plausible wct, bcc and t2 data and parm sizes */
+ 	/* check for parm and data offset going beyond end of smb */
++
+ 	if (pSMB->hdr.WordCount >= 10) {
+-		if ((le16_to_cpu(pSMB->t2_rsp.ParameterOffset) <= 1024) &&
+-		   (le16_to_cpu(pSMB->t2_rsp.DataOffset) <= 1024)) {
++		memcpy(&ParameterOffset, &pSMB->t2_rsp.ParameterOffset, sizeof(ParameterOffset));
++		memcpy(&DataOffset, &pSMB->t2_rsp.DataOffset, sizeof(DataOffset));
++		if ((le16_to_cpu(ParameterOffset) <= 1024) &&
++		   (le16_to_cpu(DataOffset) <= 1024)) {
+ 			/* check that bcc is at least as big as parms + data */
+ 			/* check that bcc is less than negotiated smb buffer */
+-			total_size = le16_to_cpu(pSMB->t2_rsp.ParameterCount);
++			memcpy(&ParameterCount, &pSMB->t2_rsp.ParameterCount, sizeof(ParameterCount));
++			total_size = le16_to_cpu(ParameterCount);
+ 			if (total_size < 512) {
+-				total_size +=
+-					le16_to_cpu(pSMB->t2_rsp.DataCount);
++				memcpy(&DataCount, &pSMB->t2_rsp.DataCount, sizeof(DataCount));
++				total_size += le16_to_cpu(DataCount);
+ 				/* BCC le converted in SendReceive */
+-				pBCC = (pSMB->hdr.WordCount * 2) +
+-					sizeof(struct smb_hdr) +
+-					(char *)pSMB;
+-				if ((total_size <= (*(u16 *)pBCC)) &&
+-				   (total_size <
+-					CIFSMaxBufSize+MAX_CIFS_HDR_SIZE)) {
++				memcpy(&WordCount, &pSMB->hdr.WordCount, sizeof(WordCount));
++				pBCC = (WordCount * 2) + sizeof(struct smb_hdr) + SMB;
++				memcpy(&BCC, pBCC, sizeof(BCC));
++				if ((total_size <= BCC) && (total_size < CIFSMaxBufSize+MAX_CIFS_HDR_SIZE)) {
+ 					return 0;
+ 				}
+ 			}
+ 		}
+ 	}
+-	cifs_dump_mem("Invalid transact2 SMB: ", (char *)pSMB,
+-		sizeof(struct smb_t2_rsp) + 16);
++	cifs_dump_mem("Invalid transact2 SMB: ", SMB, sizeof(struct smb_t2_rsp) + 16);
+ 	return rc;
+ }
+ int
+diff -Nwrup linux-2.6.25.10-orig/fs/cifs/cifs_unicode.c linux-2.6.25.10/fs/cifs/cifs_unicode.c
+--- linux-2.6.25.10-orig/fs/cifs/cifs_unicode.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/cifs/cifs_unicode.c	2008-07-18 09:13:37.000000000 -0400
+@@ -65,6 +65,7 @@ cifs_strtoUCS(__le16 *to, const char *fr
+ 	      const struct nls_table *codepage)
+ {
+ 	int charlen;
++	__le16 temp;
+ 	int i;
+ 	wchar_t *wchar_to = (wchar_t *)to; /* needed to quiet sparse */
+ 
+@@ -77,14 +78,18 @@ cifs_strtoUCS(__le16 *to, const char *fr
+ 			       ("strtoUCS: char2uni of %d returned %d",
+ 				(int)*from, charlen));
+ 			/* A question mark */
+-			to[i] = cpu_to_le16(0x003f);
++			temp = cpu_to_le16(0x003f);
++			memcpy(&to[i], &temp, sizeof(temp));
+ 			charlen = 1;
+-		} else
+-			to[i] = cpu_to_le16(wchar_to[i]);
+-
++		} else {
++			memcpy(&temp, &wchar_to[i], sizeof(temp));
++			temp = cpu_to_le16(temp); 
++			memcpy(&to[i], &temp, sizeof(temp)); 
+ 	}
+ 
+-	to[i] = 0;
++	}
++	temp = 0x0000;
++	memcpy(&to[i], &temp, sizeof(temp));
+ 	return i;
+ }
+ 
+diff -Nwrup linux-2.6.25.10-orig/fs/cifs/connect.c linux-2.6.25.10/fs/cifs/connect.c
+--- linux-2.6.25.10-orig/fs/cifs/connect.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/cifs/connect.c	2008-07-18 09:13:37.000000000 -0400
+@@ -310,9 +310,9 @@ static int coalesce_t2(struct smb_hdr *p
+ 	memcpy(data_area_of_target, data_area_of_buf2, total_in_buf2);
+ 	total_in_buf += total_in_buf2;
+ 	pSMBt->t2_rsp.DataCount = cpu_to_le16(total_in_buf);
+-	byte_count = le16_to_cpu(BCC_LE(pTargetSMB));
++	byte_count = le16_to_cpu(get_BCC_LE(pTargetSMB));
+ 	byte_count += total_in_buf2;
+-	BCC_LE(pTargetSMB) = cpu_to_le16(byte_count);
++	set_BCC_LE(pTargetSMB, cpu_to_le16(byte_count));
+ 
+ 	byte_count = pTargetSMB->smb_buf_length;
+ 	byte_count += total_in_buf2;
+@@ -2451,13 +2451,13 @@ CIFSSessSetup(unsigned int xid, struct c
+ 			if (smb_buffer->Flags2 & SMBFLG2_UNICODE) {
+ 				if ((long) (bcc_ptr) % 2) {
+ 					remaining_words =
+-					    (BCC(smb_buffer_response) - 1) / 2;
++					    (get_BCC(smb_buffer_response) - 1) / 2;
+ 					/* Unicode strings must be word
+ 					   aligned */
+ 					bcc_ptr++;
+ 				} else {
+ 					remaining_words =
+-						BCC(smb_buffer_response) / 2;
++						get_BCC(smb_buffer_response) / 2;
+ 				}
+ 				len =
+ 				    UniStrnlen((wchar_t *) bcc_ptr,
+@@ -2539,7 +2539,7 @@ CIFSSessSetup(unsigned int xid, struct c
+ 				len = strnlen(bcc_ptr, 1024);
+ 				if (((long) bcc_ptr + len) - (long)
+ 				    pByteArea(smb_buffer_response)
+-					    <= BCC(smb_buffer_response)) {
++					    <= get_BCC(smb_buffer_response)) {
+ 					kfree(ses->serverOS);
+ 					ses->serverOS = kzalloc(len + 1,
+ 								GFP_KERNEL);
+@@ -2793,17 +2793,15 @@ CIFSNTLMSSPNegotiateSessSetup(unsigned i
+ 				if (smb_buffer->Flags2 & SMBFLG2_UNICODE) {
+ 					if ((long) (bcc_ptr) % 2) {
+ 						remaining_words =
+-						    (BCC(smb_buffer_response)
++						    (get_BCC(smb_buffer_response)
+ 						     - 1) / 2;
+ 					 /* Must word align unicode strings */
+ 						bcc_ptr++;
+ 					} else {
+ 						remaining_words =
+-						    BCC
+-						    (smb_buffer_response) / 2;
++						    get_BCC(smb_buffer_response) / 2;
+ 					}
+-					len =
+-					    UniStrnlen((wchar_t *) bcc_ptr,
++					len = UniStrnlen((wchar_t *) bcc_ptr,
+ 						       remaining_words - 1);
+ /* We look for obvious messed up bcc or strings in response so we do not go off
+    the end since (at least) WIN2K and Windows XP have a major bug in not null
+@@ -2880,7 +2878,7 @@ CIFSNTLMSSPNegotiateSessSetup(unsigned i
+ 					len = strnlen(bcc_ptr, 1024);
+ 					if (((long) bcc_ptr + len) - (long)
+ 					    pByteArea(smb_buffer_response)
+-					    <= BCC(smb_buffer_response)) {
++					    <= get_BCC(smb_buffer_response)) {
+ 						if (ses->serverOS)
+ 							kfree(ses->serverOS);
+ 						ses->serverOS =
+@@ -3199,11 +3197,11 @@ CIFSNTLMSSPAuthSessSetup(unsigned int xi
+ 				if (smb_buffer->Flags2 & SMBFLG2_UNICODE) {
+ 					if ((long) (bcc_ptr) % 2) {
+ 						remaining_words =
+-						    (BCC(smb_buffer_response)
++						    (get_BCC(smb_buffer_response)
+ 						     - 1) / 2;
+ 						bcc_ptr++;	/* Unicode strings must be word aligned */
+ 					} else {
+-						remaining_words = BCC(smb_buffer_response) / 2;
++						remaining_words = get_BCC(smb_buffer_response) / 2;
+ 					}
+ 					len = UniStrnlen((wchar_t *) bcc_ptr,
+ 							remaining_words - 1);
+@@ -3287,7 +3285,7 @@ CIFSNTLMSSPAuthSessSetup(unsigned int xi
+ 					len = strnlen(bcc_ptr, 1024);
+ 					if (((long) bcc_ptr + len) -
+ 					   (long) pByteArea(smb_buffer_response)
+-						<= BCC(smb_buffer_response)) {
++						<= get_BCC(smb_buffer_response)) {
+ 						if (ses->serverOS)
+ 							kfree(ses->serverOS);
+ 						ses->serverOS = kzalloc(len + 1, GFP_KERNEL);
+@@ -3444,7 +3442,7 @@ CIFSTCon(unsigned int xid, struct cifsSe
+ 		tcon->tidStatus = CifsGood;
+ 		tcon->tid = smb_buffer_response->Tid;
+ 		bcc_ptr = pByteArea(smb_buffer_response);
+-		length = strnlen(bcc_ptr, BCC(smb_buffer_response) - 2);
++		length = strnlen(bcc_ptr, get_BCC(smb_buffer_response) - 2);
+ 		/* skip service field (NB: this field is always ASCII) */
+ 		if (length == 3) {
+ 			if ((bcc_ptr[0] == 'I') && (bcc_ptr[1] == 'P') &&
+@@ -3464,7 +3462,7 @@ CIFSTCon(unsigned int xid, struct cifsSe
+ 			length = UniStrnlen((wchar_t *) bcc_ptr, 512);
+ 			if ((bcc_ptr + (2 * length)) -
+ 			     pByteArea(smb_buffer_response) <=
+-			    BCC(smb_buffer_response)) {
++			    get_BCC(smb_buffer_response)) {
+ 				kfree(tcon->nativeFileSystem);
+ 				tcon->nativeFileSystem =
+ 				    kzalloc(length + 2, GFP_KERNEL);
+@@ -3483,7 +3481,7 @@ CIFSTCon(unsigned int xid, struct cifsSe
+ 			length = strnlen(bcc_ptr, 1024);
+ 			if ((bcc_ptr + length) -
+ 			    pByteArea(smb_buffer_response) <=
+-			    BCC(smb_buffer_response)) {
++			    get_BCC(smb_buffer_response)) {
+ 				kfree(tcon->nativeFileSystem);
+ 				tcon->nativeFileSystem =
+ 				    kzalloc(length + 1, GFP_KERNEL);
+diff -Nwrup linux-2.6.25.10-orig/fs/cifs/netmisc.c linux-2.6.25.10/fs/cifs/netmisc.c
+--- linux-2.6.25.10-orig/fs/cifs/netmisc.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/cifs/netmisc.c	2008-07-18 09:13:37.000000000 -0400
+@@ -132,6 +132,28 @@ static const struct smb_to_posix_error m
+ 	{0, 0}
+ };
+ 
++/* given a pointer to an smb_hdr get the value of byte count */
++__u16 get_BCC(struct smb_hdr *smb_var) {
++	__u16 temp = 0;
++	__u16 *pTemp = (__u16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount));
++	memcpy(&temp, pTemp, sizeof(temp));
++	return (temp);
++}
++__le16 get_BCC_LE(struct smb_hdr *smb_var) {
++	__le16 temp = 0;
++	__le16 *pTemp = (__le16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount));
++	memcpy(&temp, pTemp, sizeof(temp));
++	return (temp);
++}
++/* given a pointer to an smb_hdr set the value of byte count */
++void set_BCC(struct smb_hdr *smb_var, __u16 count) {
++	__u16 *pTemp = (__u16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount));
++	memcpy(pTemp, &count, sizeof(count));
++}
++void set_BCC_LE(struct smb_hdr *smb_var, __le16 count) {
++	__le16 *pTemp = (__le16 *)((char *)smb_var + sizeof(struct smb_hdr) + (2 * smb_var->WordCount));
++	memcpy(pTemp, &count, sizeof(count));
++}
+ 
+ /* if the mount helper is missing we need to reverse the 1st slash
+    from '/' to backslash in order to format the UNC properly for
+@@ -867,14 +889,14 @@ unsigned int
+ smbCalcSize(struct smb_hdr *ptr)
+ {
+ 	return (sizeof(struct smb_hdr) + (2 * ptr->WordCount) +
+-		2 /* size of the bcc field */ + BCC(ptr));
++		2 /* size of the bcc field */ + get_BCC(ptr));
+ }
+ 
+ unsigned int
+ smbCalcSize_LE(struct smb_hdr *ptr)
+ {
+ 	return (sizeof(struct smb_hdr) + (2 * ptr->WordCount) +
+-		2 /* size of the bcc field */ + le16_to_cpu(BCC_LE(ptr)));
++		2 /* size of the bcc field */ + le16_to_cpu(get_BCC_LE(ptr)));
+ }
+ 
+ /* The following are taken from fs/ntfs/util.c */
+diff -Nwrup linux-2.6.25.10-orig/fs/cifs/sess.c linux-2.6.25.10/fs/cifs/sess.c
+--- linux-2.6.25.10-orig/fs/cifs/sess.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/cifs/sess.c	2008-07-18 09:13:37.000000000 -0400
+@@ -564,7 +564,7 @@ CIFS_SessSetup(unsigned int xid, struct 
+ 	count = iov[1].iov_len + iov[2].iov_len;
+ 	smb_buf->smb_buf_length += count;
+ 
+-	BCC_LE(smb_buf) = cpu_to_le16(count);
++	set_BCC_LE(smb_buf, cpu_to_le16(count));
+ 
+ 	rc = SendReceive2(xid, ses, iov, 3 /* num_iovecs */, &resp_buf_type,
+ 			  CIFS_STD_OP /* not long */ | CIFS_LOG_ERROR);
+@@ -589,7 +589,7 @@ CIFS_SessSetup(unsigned int xid, struct 
+ 	cFYI(1, ("UID = %d ", ses->Suid));
+ 	/* response can have either 3 or 4 word count - Samba sends 3 */
+ 	/* and lanman response is 3 */
+-	bytes_remaining = BCC(smb_buf);
++	bytes_remaining = get_BCC(smb_buf);
+ 	bcc_ptr = pByteArea(smb_buf);
+ 
+ 	if (smb_buf->WordCount == 4) {
+diff -Nwrup linux-2.6.25.10-orig/fs/cifs/transport.c linux-2.6.25.10/fs/cifs/transport.c
+--- linux-2.6.25.10-orig/fs/cifs/transport.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/cifs/transport.c	2008-07-18 09:13:37.000000000 -0400
+@@ -611,8 +611,7 @@ SendReceive2(const unsigned int xid, str
+ 		if (receive_len >= sizeof(struct smb_hdr) - 4
+ 		    /* do not count RFC1001 header */  +
+ 		    (2 * midQ->resp_buf->WordCount) + 2 /* bcc */ )
+-			BCC(midQ->resp_buf) =
+-				le16_to_cpu(BCC_LE(midQ->resp_buf));
++				set_BCC(midQ->resp_buf, le16_to_cpu(get_BCC_LE(midQ->resp_buf)));
+ 		if ((flags & CIFS_NO_RESP) == 0)
+ 			midQ->resp_buf = NULL;  /* mark it so buf will
+ 						   not be freed by
+@@ -800,7 +799,7 @@ SendReceive(const unsigned int xid, stru
+ 		if (receive_len >= sizeof(struct smb_hdr) - 4
+ 		    /* do not count RFC1001 header */  +
+ 		    (2 * out_buf->WordCount) + 2 /* bcc */ )
+-			BCC(out_buf) = le16_to_cpu(BCC_LE(out_buf));
++				set_BCC(out_buf, le16_to_cpu(get_BCC_LE(out_buf)));
+ 	} else {
+ 		rc = -EIO;
+ 		cERROR(1, ("Bad MID state?"));
+@@ -1050,7 +1049,7 @@ SendReceiveBlockingLock(const unsigned i
+ 	if (receive_len >= sizeof(struct smb_hdr) - 4
+ 	    /* do not count RFC1001 header */  +
+ 	    (2 * out_buf->WordCount) + 2 /* bcc */ )
+-		BCC(out_buf) = le16_to_cpu(BCC_LE(out_buf));
++				set_BCC(out_buf, le16_to_cpu(get_BCC_LE(out_buf)));
+ 
+ out:
+ 	DeleteMidQEntry(midQ);
+
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_base.c linux-2.6.25.10/fs/nls/nls_base.c
+--- linux-2.6.25.10-orig/fs/nls/nls_base.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_base.c	2008-07-18 09:13:37.000000000 -0400
+@@ -455,8 +455,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_ascii.c linux-2.6.25.10/fs/nls/nls_ascii.c
+--- linux-2.6.25.10-orig/fs/nls/nls_ascii.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_ascii.c	2008-07-26 22:42:38.000000000 -0400
+@@ -136,8 +136,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp1250.c linux-2.6.25.10/fs/nls/nls_cp1250.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp1250.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp1250.c	2008-07-26 22:43:08.000000000 -0400
+@@ -317,8 +317,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-        *uni = charset2uni[*rawstring];
+-        if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+                 return -EINVAL;
+         return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp1251.c linux-2.6.25.10/fs/nls/nls_cp1251.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp1251.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp1251.c	2008-07-26 22:43:37.000000000 -0400
+@@ -271,8 +271,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp1255.c linux-2.6.25.10/fs/nls/nls_cp1255.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp1255.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp1255.c	2008-07-26 22:43:50.000000000 -0400
+@@ -352,8 +352,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp437.c linux-2.6.25.10/fs/nls/nls_cp437.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp437.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp437.c	2008-07-26 22:44:05.000000000 -0400
+@@ -357,8 +357,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp737.c linux-2.6.25.10/fs/nls/nls_cp737.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp737.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp737.c	2008-07-26 22:44:19.000000000 -0400
+@@ -320,8 +320,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp775.c linux-2.6.25.10/fs/nls/nls_cp775.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp775.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp775.c	2008-07-26 22:44:34.000000000 -0400
+@@ -289,8 +289,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp850.c linux-2.6.25.10/fs/nls/nls_cp850.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp850.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp850.c	2008-07-26 22:44:47.000000000 -0400
+@@ -285,8 +285,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp852.c linux-2.6.25.10/fs/nls/nls_cp852.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp852.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp852.c	2008-07-26 22:45:00.000000000 -0400
+@@ -307,8 +307,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp855.c linux-2.6.25.10/fs/nls/nls_cp855.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp855.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp855.c	2008-07-26 22:45:12.000000000 -0400
+@@ -269,8 +269,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp857.c linux-2.6.25.10/fs/nls/nls_cp857.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp857.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp857.c	2008-07-26 22:45:38.000000000 -0400
+@@ -271,8 +271,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp861.c linux-2.6.25.10/fs/nls/nls_cp861.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp861.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp861.c	2008-07-26 22:45:25.000000000 -0400
+@@ -357,8 +357,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp862.c linux-2.6.25.10/fs/nls/nls_cp862.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp862.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp862.c	2008-07-26 22:46:09.000000000 -0400
+@@ -391,8 +391,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp863.c linux-2.6.25.10/fs/nls/nls_cp863.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp863.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp863.c	2008-07-26 22:46:21.000000000 -0400
+@@ -351,8 +351,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp864.c linux-2.6.25.10/fs/nls/nls_cp864.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp864.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp864.c	2008-07-26 22:46:34.000000000 -0400
+@@ -377,8 +377,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp865.c linux-2.6.25.10/fs/nls/nls_cp865.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp865.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp865.c	2008-07-26 22:46:46.000000000 -0400
+@@ -357,8 +357,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp866.c linux-2.6.25.10/fs/nls/nls_cp866.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp866.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp866.c	2008-07-26 22:46:56.000000000 -0400
+@@ -275,8 +275,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp869.c linux-2.6.25.10/fs/nls/nls_cp869.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp869.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp869.c	2008-07-26 22:47:13.000000000 -0400
+@@ -285,8 +285,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_cp874.c linux-2.6.25.10/fs/nls/nls_cp874.c
+--- linux-2.6.25.10-orig/fs/nls/nls_cp874.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_cp874.c	2008-07-26 22:47:24.000000000 -0400
+@@ -243,8 +243,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-13.c linux-2.6.25.10/fs/nls/nls_iso8859-13.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-13.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-13.c	2008-07-26 22:48:38.000000000 -0400
+@@ -255,8 +255,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-14.c linux-2.6.25.10/fs/nls/nls_iso8859-14.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-14.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-14.c	2008-07-26 22:48:50.000000000 -0400
+@@ -311,8 +311,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-15.c linux-2.6.25.10/fs/nls/nls_iso8859-15.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-15.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-15.c	2008-07-26 22:49:00.000000000 -0400
+@@ -277,8 +277,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-1.c linux-2.6.25.10/fs/nls/nls_iso8859-1.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-1.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-1.c	2008-07-26 22:49:11.000000000 -0400
+@@ -227,8 +227,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-2.c linux-2.6.25.10/fs/nls/nls_iso8859-2.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-2.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-2.c	2008-07-26 22:49:25.000000000 -0400
+@@ -278,8 +278,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-3.c linux-2.6.25.10/fs/nls/nls_iso8859-3.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-3.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-3.c	2008-07-26 22:49:36.000000000 -0400
+@@ -278,8 +278,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-4.c linux-2.6.25.10/fs/nls/nls_iso8859-4.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-4.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-4.c	2008-07-26 22:49:46.000000000 -0400
+@@ -278,8 +278,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-5.c linux-2.6.25.10/fs/nls/nls_iso8859-5.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-5.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-5.c	2008-07-26 22:49:59.000000000 -0400
+@@ -242,8 +242,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-6.c linux-2.6.25.10/fs/nls/nls_iso8859-6.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-6.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-6.c	2008-07-26 22:50:18.000000000 -0400
+@@ -233,8 +233,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-7.c linux-2.6.25.10/fs/nls/nls_iso8859-7.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-7.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-7.c	2008-07-26 22:50:30.000000000 -0400
+@@ -287,8 +287,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_iso8859-9.c linux-2.6.25.10/fs/nls/nls_iso8859-9.c
+--- linux-2.6.25.10-orig/fs/nls/nls_iso8859-9.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_iso8859-9.c	2008-07-26 22:50:40.000000000 -0400
+@@ -242,8 +242,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_koi8-r.c linux-2.6.25.10/fs/nls/nls_koi8-r.c
+--- linux-2.6.25.10-orig/fs/nls/nls_koi8-r.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_koi8-r.c	2008-07-26 22:50:50.000000000 -0400
+@@ -293,8 +293,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
+diff -Nwrup linux-2.6.25.10-orig/fs/nls/nls_koi8-u.c linux-2.6.25.10/fs/nls/nls_koi8-u.c
+--- linux-2.6.25.10-orig/fs/nls/nls_koi8-u.c	2008-07-02 23:46:47.000000000 -0400
++++ linux-2.6.25.10/fs/nls/nls_koi8-u.c	2008-07-26 22:51:13.000000000 -0400
+@@ -300,8 +300,12 @@ static int uni2char(wchar_t uni, unsigne
+ 
+ static int char2uni(const unsigned char *rawstring, int boundlen, wchar_t *uni)
+ {
+-	*uni = charset2uni[*rawstring];
+-	if (*uni == 0x0000)
++	wchar_t temp;
++
++	memcpy(uni, &charset2uni[*rawstring], sizeof(*uni));
++	memcpy(&temp, uni, sizeof(*uni));
++
++	if (temp == 0x0000)
+ 		return -EINVAL;
+ 	return 1;
+ }
