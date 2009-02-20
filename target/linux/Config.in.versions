@@ -5,9 +5,7 @@
 
 config LINUX26_LATEST_RC_VERSION
 	string
-	default "2.6.29-rc2" if BR2_KERNEL_ADD_LATEST_RC_PATCH
-	help
-	  Not really available as of 20090103
+	default "2.6.29-rc5" if BR2_KERNEL_ADD_LATEST_RC_PATCH
 
 config LINUX26_LATEST_GIT_VERSION
 	string

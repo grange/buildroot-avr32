@@ -1,0 +1,24 @@
+--- a/arch/avr32/boards/atngw100/setup.c	2008-02-26 12:27:37.000000000 -0500
++++ b/arch/avr32/boards/atngw100/setup.c	2008-02-26 12:26:08.000000000 -0500
+@@ -147,6 +147,13 @@ static struct platform_device i2c_gpio_d
+ };
+ #endif
+ 
++static struct ac97c_platform_data __initdata ac97c0_data = {
++	.dma_rx_periph_id	= 3,
++	.dma_tx_periph_id	= 4,
++	.dma_controller_id	= 0,
++	.reset_pin		= GPIO_PIN_PB(18), // change to whatever pin you want, i.e. GPIO_PIN_PB(18)
++};
++
+ static int __init atngw100_init(void)
+ {
+ 	unsigned	i;
+@@ -166,6 +173,7 @@ static int __init atngw100_init(void)
+ 	at32_add_device_spi(0, spi0_board_info, ARRAY_SIZE(spi0_board_info));
+ 	at32_add_device_mci(0, &mci0_data);
+ 	at32_add_device_usba(0, NULL);
++	at32_add_device_ac97c(0, &ac97c0_data);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(ngw_leds); i++) {
+ 		at32_select_gpio(ngw_leds[i].gpio,

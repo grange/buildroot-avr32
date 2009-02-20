@@ -1,0 +1,25 @@
+--- a/arch/avr32/boards/atngw100/setup.c	2009-02-20 08:57:00.000000000 -0500
++++ b/arch/avr32/boards/atngw100/setup.c	2009-02-20 08:58:37.000000000 -0500
+@@ -134,6 +134,14 @@ static struct mci_platform_data __initda
+ 	},
+ };
+ 
++static struct mci_platform_data __initdata mci1_data = {
++	.slot[1] = {
++		.bus_width	= 4,
++		.detect_pin	= GPIO_PIN_NONE,
++		.wp_pin		= GPIO_PIN_NONE,
++	},
++};
++
+ /*
+  * The next two functions should go away as the boot loader is
+  * supposed to initialize the macb address registers with a valid
+@@ -252,6 +260,7 @@ static int __init atngw100_init(void)
+ 
+ 	at32_add_device_spi(0, spi0_board_info, ARRAY_SIZE(spi0_board_info));
+ 	at32_add_device_mci(0, &mci0_data);
++	at32_add_device_mci(0, &mci1_data);
+ 	at32_add_device_usba(0, NULL);
+ 
+ 	at32_add_device_psif(0);

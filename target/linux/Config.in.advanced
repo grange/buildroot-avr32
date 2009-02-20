@@ -43,6 +43,7 @@ config BR2_KERNEL_NEXT_VERSION
 
 config BR2_KERNEL_THIS_VERSION
 	string
+	default "2.6.29" if BR2_LINUX_2_6_29
 	default "2.6.28" if BR2_LINUX_2_6_28
 	default "2.6.24" if BR2_LINUX_2_6_24
 
@@ -106,6 +107,10 @@ choice
 config BR2_LINUX_2_6_STABLE
 	bool "The latest stable Linux kernel (2.6.28.2)"
 
+config BR2_LINUX_2_6_29
+	bool "Linux 2.6.29"
+	select BR2_KERNEL_BASE
+
 config BR2_LINUX_2_6_28
 	bool "Linux 2.6.28"
 	select BR2_KERNEL_BASE
@@ -128,7 +133,7 @@ config BR2_CUSTOM_DOWNLOAD_LINUX26_VERSION
 
 config BR2_CUSTOM_LINUX26_VERSION
 	string "Linux Version"
-	default "2.6.29-rc2"
+	default "2.6.29-rc5"
 	help
 	  Specify what the linux version will be called
 
