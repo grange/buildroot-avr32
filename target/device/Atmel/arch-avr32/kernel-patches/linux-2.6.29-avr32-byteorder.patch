@@ -1,0 +1,11 @@
+--- a/arch/avr32/include/asm/byteorder.h	2009-11-24 19:54:05.547361893 -0500
++++ b/arch/avr32/include/asm/byteorder.h	2009-11-24 19:54:05.615358482 -0500
+@@ -6,7 +6,7 @@
+ 
+ #include <asm/types.h>
+ 
+-
++#undef __LITTLE_ENDIAN
+ #define __BIG_ENDIAN
+ #define __SWAB_64_THRU_32__
+ 
