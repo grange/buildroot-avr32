@@ -3,7 +3,7 @@
 # module-init-tools
 #
 #############################################################
-MODULE_INIT_TOOLS_VERSION=3.2.2
+MODULE_INIT_TOOLS_VERSION=3.11.1
 MODULE_INIT_TOOLS_SOURCE=module-init-tools-$(MODULE_INIT_TOOLS_VERSION).tar.bz2
 MODULE_INIT_TOOLS_CAT:=$(BZCAT)
 MODULE_INIT_TOOLS_SITE=$(BR2_KERNEL_MIRROR)/linux/utils/kernel/module-init-tools/
@@ -39,7 +39,7 @@ $(MODULE_INIT_TOOLS_DIR)/.configured: $(MODULE_INIT_TOOLS_DIR)/.unpacked
 	touch $(MODULE_INIT_TOOLS_DIR)/.configured
 
 $(MODULE_INIT_TOOLS_DIR)/$(MODULE_INIT_TOOLS_BINARY): $(MODULE_INIT_TOOLS_DIR)/.configured
-	$(MAKE) CC=$(TARGET_CC) -C $(MODULE_INIT_TOOLS_DIR) CFLAGS="-L$(STAGING_DIR)/lib"
+	$(MAKE) CC=$(TARGET_CC) -C $(MODULE_INIT_TOOLS_DIR)
 	touch -c $(MODULE_INIT_TOOLS_DIR)/$(MODULE_INIT_TOOLS_BINARY)
 
 ifeq ($(BR2_PACKAGE_MODUTILS),y)
@@ -91,12 +91,14 @@ $(MODULE_INIT_TOOLS_DIR2)/.configured: $(MODULE_INIT_TOOLS_DIR2)/.source
 	touch $(MODULE_INIT_TOOLS_DIR2)/.configured
 
 $(MODULE_INIT_TOOLS_DIR2)/$(MODULE_INIT_TOOLS_BINARY): $(MODULE_INIT_TOOLS_DIR2)/.configured
+	echo "********[ If this section of the build fails, "
+	echo "********[ install zlib-static and glibc-static on your build machine."
 	$(MAKE) -C $(MODULE_INIT_TOOLS_DIR2)
 	touch -c $(MODULE_INIT_TOOLS_DIR2)/$(MODULE_INIT_TOOLS_BINARY)
 
 
 $(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-depmod26: $(MODULE_INIT_TOOLS_DIR2)/$(MODULE_INIT_TOOLS_BINARY)
-	$(INSTALL) -D $(MODULE_INIT_TOOLS_DIR2)/$(MODULE_INIT_TOOLS_BINARY) $(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-depmod26
+	$(INSTALL) -D $(MODULE_INIT_TOOLS_DIR2)/build/$(MODULE_INIT_TOOLS_BINARY) $(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-depmod26
 
 cross-depmod26: $(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-depmod26
 
