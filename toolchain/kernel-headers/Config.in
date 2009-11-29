@@ -6,7 +6,7 @@ comment "Kernel Header Options"
 
 choice
 	prompt "Kernel Headers"
-	default BR2_KERNEL_HEADERS_2_6_28
+	default BR2_KERNEL_HEADERS_2_6_31
 
 	help
 	  Select the version of kernel header files you wish to use.
@@ -21,6 +21,15 @@ choice
 
 	config BR2_KERNEL_HEADERS_2_6_28
 		bool "Linux 2.6.28.x kernel headers"
+
+	config BR2_KERNEL_HEADERS_2_6_29
+		bool "Linux 2.6.29.x kernel headers"
+
+	config BR2_KERNEL_HEADERS_2_6_30
+		bool "Linux 2.6.30.x kernel headers"
+
+	config BR2_KERNEL_HEADERS_2_6_31
+		bool "Linux 2.6.31.x kernel headers"
 
 	config BR2_KERNEL_HEADERS_SNAP
 		bool "Linux 2.6 snapshot"
@@ -37,6 +46,9 @@ config BR2_KERNEL_HEADERS_PATCH_DIR
 config BR2_DEFAULT_KERNEL_HEADERS
 	string
 	default "2.6.24.7"	if BR2_KERNEL_HEADERS_2_6_24
-	default "2.6.28.2"	if BR2_KERNEL_HEADERS_2_6_28
+	default "2.6.28.10"	if BR2_KERNEL_HEADERS_2_6_28
+	default "2.6.29.6"	if BR2_KERNEL_HEADERS_2_6_29
+	default "2.6.30.9"	if BR2_KERNEL_HEADERS_2_6_30
+	default "2.6.31.6"	if BR2_KERNEL_HEADERS_2_6_31
 	default "2.6"		if BR2_KERNEL_HEADERS_SNAP
 

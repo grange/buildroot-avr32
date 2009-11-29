@@ -43,6 +43,8 @@ config BR2_KERNEL_NEXT_VERSION
 
 config BR2_KERNEL_THIS_VERSION
 	string
+	default "2.6.31" if BR2_LINUX_2_6_31
+	default "2.6.30" if BR2_LINUX_2_6_30
 	default "2.6.29" if BR2_LINUX_2_6_29
 	default "2.6.28" if BR2_LINUX_2_6_28
 	default "2.6.24" if BR2_LINUX_2_6_24
@@ -105,7 +107,15 @@ choice
 	  Select the specific Linux version you want to use
 
 config BR2_LINUX_2_6_STABLE
-	bool "The latest stable Linux kernel (2.6.28.2)"
+	bool "The latest stable Linux kernel (2.6.31.6)"
+
+config BR2_LINUX_2_6_31_6
+	bool "Linux 2.6.31.6"
+	select BR2_KERNEL_BASE
+
+config BR2_LINUX_2_6_30
+	bool "Linux 2.6.30"
+	select BR2_KERNEL_BASE
 
 config BR2_LINUX_2_6_29
 	bool "Linux 2.6.29"
