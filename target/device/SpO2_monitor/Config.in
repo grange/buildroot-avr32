@@ -1,0 +1,29 @@
+menuconfig BR2_TARGET_SPO2
+	bool "SpO2 monitor"
+	depends on BR2_avr32
+
+if BR2_TARGET_SPO2
+
+choice
+	prompt "Monitor board"
+	depends on BR2_TARGET_SPO2
+	help
+	  SpO2 Board to build for
+
+config BR2_TARGET_DX4100_1119
+	bool "DX4100-1119 (Based on NGW100)"
+	depends on BR2_TARGET_SPO2
+	help
+	  Board based on NGW100
+
+endchoice
+
+config BR2_BOARD_PATH
+	string
+	default "target/device/SpO2_monitor"	if	BR2_TARGET_SPO2
+
+config BR2_BOARD_NAME
+	string
+	default "DX4100-1119"	if	BR2_TARGET_DX4100_1119
+
+endif

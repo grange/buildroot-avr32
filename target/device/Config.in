@@ -5,6 +5,7 @@ source "project/Config.in"
 comment "Preset Devices"
 
 source "target/device/Atmel/Config.in"
+source "target/device/SpO2_monitor/Config.in"
 source "target/device/valka/Config.in"
 source "target/device/x86/Config.in"
 

@@ -1,0 +1,18 @@
+ifeq ($(BR2_TARGET_SpO2),y)
+BR2_BOARD_PATH= target/device/SpO2_monitor
+
+TARGET_SKELETON=$(BR2_BOARD_PATH)/target_skeleton
+TARGET_DEVICE_TABLE=$(BR2_BOARD_PATH)/device_table.txt
+KERNEL_HEADERS_PATCH_DIR=target/device/Atmel/arch-avr32/kernel-headers
+
+SPO2_status:
+	@echo "***************************************************************"
+	@echo BOARD_PATH = $(BR2_BOARD_PATH)
+	@echo BOARD_NAME = $(BR2_BOARD_NAME)
+	@echo TARGET_SKELETON = $(TARGET_SKELETON)
+	@echo TARGET_DEVICE_TABLE = $(TARGET_DEVICE_TABLE)
+	@echo BR2_PACKAGE_BUSYBOX_CONFIG = $(BR2_PACKAGE_BUSYBOX_CONFIG)
+	@echo BR2_PACKAGE_LINUX_KCONFIG = $(BR2_PACKAGE_LINUX_KCONFIG)
+	@echo "*****************************************************************"
+	@echo TARGETS = $(TARGETS)
+endif

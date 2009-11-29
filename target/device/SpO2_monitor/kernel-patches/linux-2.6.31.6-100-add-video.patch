@@ -1,0 +1,86 @@
+--- a/arch/avr32/boards/atngw100/setup.c	2009-01-24 19:42:07.000000000 -0500
++++ b/arch/avr32/boards/atngw100/setup.c	2009-02-10 14:54:12.000000000 -0500
+@@ -29,6 +29,9 @@
+ #include <mach/init.h>
+ #include <mach/portmux.h>
+ 
++#include <linux/fb.h>
++#include <video/atmel_lcdc.h>
++
+ /* Oscillator frequencies. These are board-specific */
+ unsigned long at32_board_osc_rates[3] = {
+ 	[0] = 32768,	/* 32.768 kHz on RTC osc */
+@@ -39,6 +42,59 @@ unsigned long at32_board_osc_rates[3] = 
+ /* Initialized by bootloader-specific startup code. */
+ struct tag *bootloader_tags __initdata;
+ 
++static struct fb_videomode __initdata video_modes[] = {
++	{
++		.name		= "640x480@60",
++		.refresh	= 60,
++		.xres		= 640,		.yres		= 480,
++		.pixclock	= KHZ2PICOS(23856),
++
++		.left_margin	= 80,		.right_margin	= 16,
++		.upper_margin	= 13,		.lower_margin	= 1,
++		.hsync_len	= 64,		.vsync_len	= 3,
++
++		.sync		= 0,
++		.vmode		= FB_VMODE_NONINTERLACED,
++	},
++	{
++		.name		= "320x240@117",
++		.refresh	= 117,
++		.xres		= 320,		.yres		= 240,
++		.pixclock	= KHZ2PICOS(12074),
++
++		.left_margin	= 40,		.right_margin	= 8,
++		.upper_margin	= 14,		.lower_margin	= 1,
++		.hsync_len	= 32,		.vsync_len	= 3,
++
++		.sync		= 0,
++		.vmode		= FB_VMODE_NONINTERLACED,
++	},
++};
++
++static struct fb_monspecs __initdata atngw100_default_monspecs = {
++	.manufacturer		= "ATM",
++	.monitor		= "GENERIC",
++	.modedb			= video_modes,
++	.modedb_len		= ARRAY_SIZE(video_modes),
++	.hfmin			= 14820,
++	.hfmax			= 32000,
++	.vfmin			= 30,
++	.vfmax			= 200,
++	.dclkmax		= 30000000,
++};
++
++struct atmel_lcdfb_info __initdata atngw100_lcdc_data = {
++	.default_bpp		= 16,
++	.default_dmacon		= ATMEL_LCDC_DMAEN | ATMEL_LCDC_DMA2DEN,
++	.default_lcdcon2	= (ATMEL_LCDC_DISTYPE_TFT
++				   | ATMEL_LCDC_INVCLK 
++				   | ATMEL_LCDC_INVDVAL_NORMAL
++				   | ATMEL_LCDC_CLKMOD_ALWAYSACTIVE
++				   | ATMEL_LCDC_MEMOR_BIG),
++	.default_monspecs	= &atngw100_default_monspecs,
++	.guard_time		= 2,
++};
++
+ struct eth_addr {
+ 	u8 addr[6];
+ };
+@@ -176,11 +232,11 @@ static int __init atngw100_init(void)
+ 	 * ATNGW100 uses 16-bit SDRAM interface, so we don't need to
+ 	 * reserve any pins for it.
+ 	 */
+-
++	at32_add_device_lcdc(0, &atngw100_lcdc_data, fbmem_start, fbmem_size, ATMEL_LCDC_NGW100_PINMASK);
+ 	at32_add_device_usart(0);
+ 
+ 	set_hw_addr(at32_add_device_eth(0, &eth_data[0]));
+-	set_hw_addr(at32_add_device_eth(1, &eth_data[1]));
++	//set_hw_addr(at32_add_device_eth(1, &eth_data[1]));
+ 
+ 	at32_add_device_spi(0, spi0_board_info, ARRAY_SIZE(spi0_board_info));
+ 	at32_add_device_mci(0, &mci0_data);
