@@ -1,0 +1,766 @@
+ drivers/net/wireless/libertas/11d.c        |   19 ++++---
+ drivers/net/wireless/libertas/assoc.c      |   11 ++--
+ drivers/net/wireless/libertas/cmd.c        |   89 ++++++++++++++++------------
+ drivers/net/wireless/libertas/cmdresp.c    |   42 ++++++++-----
+ drivers/net/wireless/libertas/debugfs.c    |    7 +-
+ drivers/net/wireless/libertas/ethtool.c    |   19 ++++---
+ drivers/net/wireless/libertas/main.c       |   12 +++-
+ drivers/net/wireless/libertas/persistcfg.c |    5 +-
+ drivers/net/wireless/libertas/rx.c         |    1 +
+ drivers/net/wireless/libertas/scan.c       |    6 +-
+ drivers/net/wireless/libertas/tx.c         |    7 ++-
+ drivers/net/wireless/libertas/wext.c       |    7 +-
+ 12 files changed, 132 insertions(+), 93 deletions(-)
+
+diff --git a/drivers/net/wireless/libertas/11d.c b/drivers/net/wireless/libertas/11d.c
+index 5c69681..1305195 100644
+--- a/drivers/net/wireless/libertas/11d.c
++++ b/drivers/net/wireless/libertas/11d.c
+@@ -1,6 +1,7 @@
+ /**
+   * This file contains functions for 802.11D.
+   */
++#include <asm/unaligned.h>
+ #include <linux/ctype.h>
+ #include <linux/kernel.h>
+ #include <linux/wireless.h>
+@@ -513,7 +514,7 @@ int lbs_cmd_802_11d_domain_info(struct lbs_private *priv,
+ 		cmd->size =
+ 		    cpu_to_le16(sizeof(pdomaininfo->action) + S_DS_GEN);
+ 		lbs_deb_hex(LBS_DEB_11D, "802_11D_DOMAIN_INFO", (u8 *) cmd,
+-			le16_to_cpu(cmd->size));
++			get_unaligned_le16(&cmd->size));
+ 		goto done;
+ 	}
+ 
+@@ -530,15 +531,16 @@ int lbs_cmd_802_11d_domain_info(struct lbs_private *priv,
+ 		       nr_subband * sizeof(struct ieee_subbandset));
+ 
+ 		cmd->size = cpu_to_le16(sizeof(pdomaininfo->action) +
+-					     le16_to_cpu(domain->header.len) +
+-					     sizeof(struct mrvl_ie_header) +
+-					     S_DS_GEN);
++				     get_unaligned_le16(&domain->header.len) +
++				     sizeof(struct mrvl_ie_header) +
++				     S_DS_GEN);
+ 	} else {
+ 		cmd->size =
+ 		    cpu_to_le16(sizeof(pdomaininfo->action) + S_DS_GEN);
+ 	}
+ 
+-	lbs_deb_hex(LBS_DEB_11D, "802_11D_DOMAIN_INFO", (u8 *) cmd, le16_to_cpu(cmd->size));
++	lbs_deb_hex(LBS_DEB_11D, "802_11D_DOMAIN_INFO", (u8 *) cmd,
++		    get_unaligned_le16(&cmd->size));
+ 
+ done:
+ 	lbs_deb_enter(LBS_DEB_11D);
+@@ -555,16 +557,17 @@ int lbs_ret_802_11d_domain_info(struct cmd_ds_command *resp)
+ {
+ 	struct cmd_ds_802_11d_domain_info *domaininfo = &resp->params.domaininforesp;
+ 	struct mrvl_ie_domain_param_set *domain = &domaininfo->domain;
+-	u16 action = le16_to_cpu(domaininfo->action);
++	u16 action = get_unaligned_le16(&domaininfo->action);
+ 	s16 ret = 0;
+ 	u8 nr_subband = 0;
+ 
+ 	lbs_deb_enter(LBS_DEB_11D);
+ 
+ 	lbs_deb_hex(LBS_DEB_11D, "domain info resp", (u8 *) resp,
+-		(int)le16_to_cpu(resp->size));
++		(int)get_unaligned_le16(&resp->size));
+ 
+-	nr_subband = (le16_to_cpu(domain->header.len) - COUNTRY_CODE_LEN) /
++	nr_subband = (get_unaligned_le16(&domain->header.len) -
++		      COUNTRY_CODE_LEN) /
+ 		      sizeof(struct ieee_subbandset);
+ 
+ 	lbs_deb_11d("domain info resp: nr_subband %d\n", nr_subband);
+diff --git a/drivers/net/wireless/libertas/assoc.c b/drivers/net/wireless/libertas/assoc.c
+index b9b3741..f07c3af 100644
+--- a/drivers/net/wireless/libertas/assoc.c
++++ b/drivers/net/wireless/libertas/assoc.c
+@@ -1,5 +1,6 @@
+ /* Copyright (C) 2006, Red Hat, Inc. */
+ 
++#include <asm/unaligned.h>
+ #include <linux/types.h>
+ #include <linux/etherdevice.h>
+ #include <linux/ieee80211.h>
+@@ -183,7 +184,7 @@ static int lbs_assoc_post(struct lbs_private *priv,
+ 	 *                                    association response from the AP)
+ 	 */
+ 
+-	status_code = le16_to_cpu(resp->statuscode);
++	status_code = get_unaligned_le16(&resp->statuscode);
+ 	if (priv->fwrelease < 0x09000000) {
+ 		switch (status_code) {
+ 		case 0x00:
+@@ -221,7 +222,7 @@ static int lbs_assoc_post(struct lbs_private *priv,
+ 
+ 	lbs_deb_hex(LBS_DEB_ASSOC, "ASSOC_RESP",
+ 		    (void *) (resp + sizeof (resp->hdr)),
+-		    le16_to_cpu(resp->hdr.size) - sizeof (resp->hdr));
++		    get_unaligned_le16(&resp->hdr.size) - sizeof (resp->hdr));
+ 
+ 	/* Send a Media Connected event, according to the Spec */
+ 	priv->connect_status = LBS_CONNECTED;
+@@ -436,8 +437,8 @@ static int lbs_adhoc_post(struct lbs_private *priv,
+ 			  struct cmd_ds_802_11_ad_hoc_result *resp)
+ {
+ 	int ret = 0;
+-	u16 command = le16_to_cpu(resp->hdr.command);
+-	u16 result = le16_to_cpu(resp->hdr.result);
++	u16 command = get_unaligned_le16(&resp->hdr.command);
++	u16 result = get_unaligned_le16(&resp->hdr.result);
+ 	union iwreq_data wrqu;
+ 	struct bss_descriptor *bss;
+ 	DECLARE_SSID_BUF(ssid);
+@@ -618,7 +619,7 @@ static int lbs_adhoc_join(struct lbs_private *priv,
+ 	cmd.bss.ibss.atimwindow = bss->atimwindow;
+ 
+ 	if (assoc_req->secinfo.wep_enabled) {
+-		u16 tmp = le16_to_cpu(cmd.bss.capability);
++		u16 tmp = get_unaligned_le16(&cmd.bss.capability);
+ 		tmp |= WLAN_CAPABILITY_PRIVACY;
+ 		cmd.bss.capability = cpu_to_le16(tmp);
+ 	}
+diff --git a/drivers/net/wireless/libertas/cmd.c b/drivers/net/wireless/libertas/cmd.c
+index 6850981..33d5ddf 100644
+--- a/drivers/net/wireless/libertas/cmd.c
++++ b/drivers/net/wireless/libertas/cmd.c
+@@ -3,6 +3,7 @@
+   * It prepares command and sends it to firmware when it is ready.
+   */
+ 
++#include <asm/unaligned.h>
+ #include <net/iw_handler.h>
+ #include <net/lib80211.h>
+ #include <linux/kfifo.h>
+@@ -34,7 +35,8 @@ int lbs_cmd_copyback(struct lbs_private *priv, unsigned long extra,
+ 	struct cmd_header *buf = (void *)extra;
+ 	uint16_t copy_len;
+ 
+-	copy_len = min(le16_to_cpu(buf->size), le16_to_cpu(resp->size));
++	copy_len = min(get_unaligned_le16(&buf->size),
++			get_unaligned_le16(&resp->size));
+ 	memcpy(buf, resp, copy_len);
+ 	return 0;
+ }
+@@ -97,11 +99,11 @@ int lbs_update_hw_spec(struct lbs_private *priv)
+ 	if (ret)
+ 		goto out;
+ 
+-	priv->fwcapinfo = le32_to_cpu(cmd.fwcapinfo);
++	priv->fwcapinfo = get_unaligned_le32(&cmd.fwcapinfo);
+ 
+ 	/* The firmware release is in an interesting format: the patch
+ 	 * level is in the most significant nibble ... so fix that: */
+-	priv->fwrelease = le32_to_cpu(cmd.fwrelease);
++	priv->fwrelease = get_unaligned_le32(&cmd.fwrelease);
+ 	priv->fwrelease = (priv->fwrelease << 8) |
+ 		(priv->fwrelease >> 24 & 0xff);
+ 
+@@ -140,9 +142,9 @@ int lbs_update_hw_spec(struct lbs_private *priv)
+ 	 * need to check for this problem and handle it properly.
+ 	 */
+ 	if (MRVL_FW_MAJOR_REV(priv->fwrelease) == MRVL_FW_V4)
+-		priv->regioncode = (le16_to_cpu(cmd.regioncode) >> 8) & 0xFF;
++		priv->regioncode = (get_unaligned_le16(&cmd.regioncode) >> 8) & 0xFF;
+ 	else
+-		priv->regioncode = le16_to_cpu(cmd.regioncode) & 0xFF;
++		priv->regioncode = get_unaligned_le16(&cmd.regioncode) & 0xFF;
+ 
+ 	for (i = 0; i < MRVDRV_MAX_REGION_CODE; i++) {
+ 		/* use the region code to search for the index */
+@@ -271,7 +273,7 @@ int lbs_cmd_802_11_inactivity_timeout(struct lbs_private *priv,
+ 	ret = lbs_cmd_with_response(priv, CMD_802_11_INACTIVITY_TIMEOUT, &cmd);
+ 
+ 	if (!ret)
+-		*timeout = le16_to_cpu(cmd.timeout);
++		*timeout = get_unaligned_le16(&cmd.timeout);
+ 
+ 	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
+ 	return 0;
+@@ -303,16 +305,17 @@ int lbs_cmd_802_11_sleep_params(struct lbs_private *priv, uint16_t cmd_action,
+ 	if (!ret) {
+ 		lbs_deb_cmd("error 0x%x, offset 0x%x, stabletime 0x%x, "
+ 			    "calcontrol 0x%x extsleepclk 0x%x\n",
+-			    le16_to_cpu(cmd.error), le16_to_cpu(cmd.offset),
+-			    le16_to_cpu(cmd.stabletime), cmd.calcontrol,
+-			    cmd.externalsleepclk);
+-
+-		sp->sp_error = le16_to_cpu(cmd.error);
+-		sp->sp_offset = le16_to_cpu(cmd.offset);
+-		sp->sp_stabletime = le16_to_cpu(cmd.stabletime);
++			    get_unaligned_le16(&cmd.error),
++			    get_unaligned_le16(&cmd.offset),
++			    get_unaligned_le16(&cmd.stabletime),
++			    cmd.calcontrol, cmd.externalsleepclk);
++
++		sp->sp_error = get_unaligned_le16(&cmd.error);
++		sp->sp_offset = get_unaligned_le16(&cmd.offset);
++		sp->sp_stabletime = get_unaligned_le16(&cmd.stabletime);
+ 		sp->sp_calcontrol = cmd.calcontrol;
+ 		sp->sp_extsleepclk = cmd.externalsleepclk;
+-		sp->sp_reserved = le16_to_cpu(cmd.reserved);
++		sp->sp_reserved = get_unaligned_le16(&cmd.reserved);
+ 	}
+ 
+ 	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
+@@ -403,7 +406,7 @@ int lbs_cmd_802_11_enable_rsn(struct lbs_private *priv, uint16_t cmd_action,
+ 
+ 	ret = lbs_cmd_with_response(priv, CMD_802_11_ENABLE_RSN, &cmd);
+ 	if (!ret && cmd_action == CMD_ACT_GET)
+-		*enable = le16_to_cpu(cmd.enable);
++		*enable = get_unaligned_le16(&cmd.enable);
+ 
+ 	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
+ 	return ret;
+@@ -473,10 +476,14 @@ int lbs_cmd_802_11_key_material(struct lbs_private *priv, uint16_t cmd_action,
+ 		while (buf_ptr < resp_end) {
+ 			struct MrvlIEtype_keyParamSet *keyparam = buf_ptr;
+ 			struct enc_key *key;
+-			uint16_t param_set_len = le16_to_cpu(keyparam->length);
+-			uint16_t key_len = le16_to_cpu(keyparam->keylen);
+-			uint16_t key_flags = le16_to_cpu(keyparam->keyinfo);
+-			uint16_t key_type = le16_to_cpu(keyparam->keytypeid);
++			uint16_t param_set_len =
++				get_unaligned_le16(&keyparam->length);
++			uint16_t key_len =
++				get_unaligned_le16(&keyparam->keylen);
++			uint16_t key_flags =
++				get_unaligned_le16(&keyparam->keyinfo);
++			uint16_t key_type =
++				get_unaligned_le16(&keyparam->keytypeid);
+ 			void *end;
+ 
+ 			end = (void *)keyparam + sizeof(keyparam->type)
+@@ -551,7 +558,8 @@ int lbs_set_snmp_mib(struct lbs_private *priv, u32 oid, u16 val)
+ 	}
+ 
+ 	lbs_deb_cmd("SNMP_CMD: (set) oid 0x%x, oid size 0x%x, value 0x%x\n",
+-		    le16_to_cpu(cmd.oid), le16_to_cpu(cmd.bufsize), val);
++		    get_unaligned_le16(&cmd.oid),
++		    get_unaligned_le16(&cmd.bufsize), val);
+ 
+ 	ret = lbs_cmd_with_response(priv, CMD_802_11_SNMP_MIB, &cmd);
+ 
+@@ -585,7 +593,7 @@ int lbs_get_snmp_mib(struct lbs_private *priv, u32 oid, u16 *out_val)
+ 	if (ret)
+ 		goto out;
+ 
+-	switch (le16_to_cpu(cmd.bufsize)) {
++	switch (get_unaligned_le16(&cmd.bufsize)) {
+ 	case sizeof(u8):
+ 		if (oid == SNMP_MIB_OID_BSS_TYPE) {
+ 			if (cmd.value[0] == 2)
+@@ -600,7 +608,7 @@ int lbs_get_snmp_mib(struct lbs_private *priv, u32 oid, u16 *out_val)
+ 		break;
+ 	default:
+ 		lbs_deb_cmd("SNMP_CMD: (get) unhandled OID 0x%x size %d\n",
+-		            oid, le16_to_cpu(cmd.bufsize));
++				oid, get_unaligned_le16(&cmd.bufsize));
+ 		break;
+ 	}
+ 
+@@ -633,7 +641,7 @@ int lbs_get_tx_power(struct lbs_private *priv, s16 *curlevel, s16 *minlevel,
+ 
+ 	ret = lbs_cmd_with_response(priv, CMD_802_11_RF_TX_POWER, &cmd);
+ 	if (ret == 0) {
+-		*curlevel = le16_to_cpu(cmd.curlevel);
++		*curlevel = get_unaligned_le16(&cmd.curlevel);
+ 		if (minlevel)
+ 			*minlevel = cmd.minlevel;
+ 		if (maxlevel)
+@@ -737,8 +745,8 @@ int lbs_cmd_802_11_rate_adapt_rateset(struct lbs_private *priv,
+ 	cmd.bitmap = lbs_rate_to_fw_bitmap(priv->cur_rate, priv->enablehwauto);
+ 	ret = lbs_cmd_with_response(priv, CMD_802_11_RATE_ADAPT_RATESET, &cmd);
+ 	if (!ret && cmd_action == CMD_ACT_GET) {
+-		priv->ratebitmap = le16_to_cpu(cmd.bitmap);
+-		priv->enablehwauto = le16_to_cpu(cmd.enablehwauto);
++		priv->ratebitmap = get_unaligned_le16(&cmd.bitmap);
++		priv->enablehwauto = get_unaligned_le16(&cmd.enablehwauto);
+ 	}
+ 
+ 	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
+@@ -818,7 +826,7 @@ int lbs_get_channel(struct lbs_private *priv)
+ 	if (ret)
+ 		goto out;
+ 
+-	ret = le16_to_cpu(cmd.channel);
++	ret = get_unaligned_le16(&cmd.channel);
+ 	lbs_deb_cmd("current radio channel is %d\n", ret);
+ 
+ out:
+@@ -869,7 +877,7 @@ int lbs_set_channel(struct lbs_private *priv, u8 channel)
+ 	if (ret)
+ 		goto out;
+ 
+-	priv->curbssparams.channel = (uint8_t) le16_to_cpu(cmd.channel);
++	priv->curbssparams.channel = (uint8_t)get_unaligned_le16(&cmd.channel);
+ 	lbs_deb_cmd("channel switch from %d to %d\n", old_channel,
+ 		priv->curbssparams.channel);
+ 
+@@ -908,7 +916,7 @@ static int lbs_cmd_reg_access(struct cmd_ds_command *cmdptr,
+ 
+ 	offval = (struct lbs_offset_value *)pdata_buf;
+ 
+-	switch (le16_to_cpu(cmdptr->command)) {
++	switch (get_unaligned_le16(&cmdptr->command)) {
+ 	case CMD_MAC_REG_ACCESS:
+ 		{
+ 			struct cmd_ds_mac_reg_access *macreg;
+@@ -1178,7 +1186,8 @@ static void lbs_queue_cmd(struct lbs_private *priv,
+ 	cmdnode->result = 0;
+ 
+ 	/* Exit_PS command needs to be queued in the header always. */
+-	if (le16_to_cpu(cmdnode->cmdbuf->command) == CMD_802_11_PS_MODE) {
++	if (get_unaligned_le16(&cmdnode->cmdbuf->command) ==
++		    CMD_802_11_PS_MODE) {
+ 		struct cmd_ds_802_11_ps_mode *psm = (void *) &cmdnode->cmdbuf[1];
+ 
+ 		if (psm->action == cpu_to_le16(CMD_SUBCMD_EXIT_PS)) {
+@@ -1197,7 +1206,7 @@ static void lbs_queue_cmd(struct lbs_private *priv,
+ 	spin_unlock_irqrestore(&priv->driver_lock, flags);
+ 
+ 	lbs_deb_host("QUEUE_CMD: inserted command 0x%04x into cmdpendingq\n",
+-		     le16_to_cpu(cmdnode->cmdbuf->command));
++		     get_unaligned_le16(&cmdnode->cmdbuf->command));
+ 
+ done:
+ 	lbs_deb_leave(LBS_DEB_HOST);
+@@ -1222,15 +1231,15 @@ static void lbs_submit_command(struct lbs_private *priv,
+ 	priv->cur_cmd_retcode = 0;
+ 	spin_unlock_irqrestore(&priv->driver_lock, flags);
+ 
+-	cmdsize = le16_to_cpu(cmd->size);
+-	command = le16_to_cpu(cmd->command);
++	cmdsize = get_unaligned_le16(&cmd->size);
++	command = get_unaligned_le16(&cmd->command);
+ 
+ 	/* These commands take longer */
+ 	if (command == CMD_802_11_SCAN || command == CMD_802_11_ASSOCIATE)
+ 		timeo = 5 * HZ;
+ 
+ 	lbs_deb_cmd("DNLD_CMD: command 0x%04x, seq %d, size %d\n",
+-		     command, le16_to_cpu(cmd->seqnum), cmdsize);
++		     command, get_unaligned_le16(&cmd->seqnum), cmdsize);
+ 	lbs_deb_hex(LBS_DEB_CMD, "DNLD_CMD", (void *) cmdnode->cmdbuf, cmdsize);
+ 
+ 	ret = priv->hw_host_to_card(priv, MVMS_CMD, (u8 *) cmd, cmdsize);
+@@ -1479,7 +1488,7 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
+ 
+ #define ACTION_NUMLED_TLVTYPE_LEN_FIELDS_LEN 8
+ 			cmdptr->size =
+-			    cpu_to_le16(le16_to_cpu(gpio->header.len)
++			    cpu_to_le16(get_unaligned_le16(&gpio->header.len)
+ 				+ S_DS_GEN
+ 				+ ACTION_NUMLED_TLVTYPE_LEN_FIELDS_LEN);
+ 			gpio->header.len = gpio->header.len;
+@@ -1704,19 +1713,21 @@ int lbs_execute_next_command(struct lbs_private *priv)
+ 	if (cmdnode) {
+ 		cmd = cmdnode->cmdbuf;
+ 
+-		if (is_command_allowed_in_ps(le16_to_cpu(cmd->command))) {
++		if (is_command_allowed_in_ps(
++				get_unaligned_le16(&cmd->command))) {
+ 			if ((priv->psstate == PS_STATE_SLEEP) ||
+ 			    (priv->psstate == PS_STATE_PRE_SLEEP)) {
+ 				lbs_deb_host(
+ 				       "EXEC_NEXT_CMD: cannot send cmd 0x%04x in psstate %d\n",
+-				       le16_to_cpu(cmd->command),
++				       get_unaligned_le16(&cmd->command),
+ 				       priv->psstate);
+ 				ret = -1;
+ 				goto done;
+ 			}
+ 			lbs_deb_host("EXEC_NEXT_CMD: OK to send command "
+-				     "0x%04x in psstate %d\n",
+-				     le16_to_cpu(cmd->command), priv->psstate);
++					"0x%04x in psstate %d\n",
++					get_unaligned_le16(&cmd->command),
++					priv->psstate);
+ 		} else if (priv->psstate != PS_STATE_FULL_POWER) {
+ 			/*
+ 			 * 1. Non-PS command:
+@@ -1786,7 +1797,7 @@ int lbs_execute_next_command(struct lbs_private *priv)
+ 		}
+ 		list_del(&cmdnode->list);
+ 		lbs_deb_host("EXEC_NEXT_CMD: sending command 0x%04x\n",
+-			    le16_to_cpu(cmd->command));
++			    get_unaligned_le16(&cmd->command));
+ 		lbs_submit_command(priv, cmdnode);
+ 	} else {
+ 		/*
+diff --git a/drivers/net/wireless/libertas/cmdresp.c b/drivers/net/wireless/libertas/cmdresp.c
+index c42d3fa..b7d3b10 100644
+--- a/drivers/net/wireless/libertas/cmdresp.c
++++ b/drivers/net/wireless/libertas/cmdresp.c
+@@ -2,6 +2,7 @@
+   * This file contains the handling of command
+   * responses as well as events generated by firmware.
+   */
++#include <asm/unaligned.h>
+ #include <linux/delay.h>
+ #include <linux/if_arp.h>
+ #include <linux/netdevice.h>
+@@ -115,8 +116,10 @@ static int lbs_ret_reg_access(struct lbs_private *priv,
+ 		{
+ 			struct cmd_ds_mac_reg_access *reg = &resp->params.macreg;
+ 
+-			priv->offsetvalue.offset = (u32)le16_to_cpu(reg->offset);
+-			priv->offsetvalue.value = le32_to_cpu(reg->value);
++			priv->offsetvalue.offset =
++				(u32)get_unaligned_le16(&reg->offset);
++			priv->offsetvalue.value =
++				get_unaligned_le32(&reg->value);
+ 			break;
+ 		}
+ 
+@@ -124,7 +127,8 @@ static int lbs_ret_reg_access(struct lbs_private *priv,
+ 		{
+ 			struct cmd_ds_bbp_reg_access *reg = &resp->params.bbpreg;
+ 
+-			priv->offsetvalue.offset = (u32)le16_to_cpu(reg->offset);
++			priv->offsetvalue.offset =
++				(u32)get_unaligned_le16(&reg->offset);
+ 			priv->offsetvalue.value = reg->value;
+ 			break;
+ 		}
+@@ -133,7 +137,8 @@ static int lbs_ret_reg_access(struct lbs_private *priv,
+ 		{
+ 			struct cmd_ds_rf_reg_access *reg = &resp->params.rfreg;
+ 
+-			priv->offsetvalue.offset = (u32)le16_to_cpu(reg->offset);
++			priv->offsetvalue.offset =
++				(u32)get_unaligned_le16(&reg->offset);
+ 			priv->offsetvalue.value = reg->value;
+ 			break;
+ 		}
+@@ -185,8 +190,10 @@ static int lbs_ret_802_11_bcn_ctrl(struct lbs_private * priv,
+ 	lbs_deb_enter(LBS_DEB_CMD);
+ 
+ 	if (bcn_ctrl->action == CMD_ACT_GET) {
+-		priv->beacon_enable = (u8) le16_to_cpu(bcn_ctrl->beacon_enable);
+-		priv->beacon_period = le16_to_cpu(bcn_ctrl->beacon_period);
++		priv->beacon_enable =
++			(u8) get_unaligned_le16(&bcn_ctrl->beacon_enable);
++		priv->beacon_period =
++			get_unaligned_le16(&bcn_ctrl->beacon_period);
+ 	}
+ 
+ 	lbs_deb_enter(LBS_DEB_CMD);
+@@ -199,7 +206,7 @@ static inline int handle_cmd_response(struct lbs_private *priv,
+ 	struct cmd_ds_command *resp = (struct cmd_ds_command *) cmd_response;
+ 	int ret = 0;
+ 	unsigned long flags;
+-	uint16_t respcmd = le16_to_cpu(resp->command);
++	uint16_t respcmd = get_unaligned_le16(&resp->command);
+ 
+ 	lbs_deb_enter(LBS_DEB_HOST);
+ 
+@@ -269,7 +276,7 @@ static inline int handle_cmd_response(struct lbs_private *priv,
+ 
+ 	default:
+ 		lbs_pr_err("CMD_RESP: unknown cmd response 0x%04x\n",
+-			   le16_to_cpu(resp->command));
++			   get_unaligned_le16(&resp->command));
+ 		break;
+ 	}
+ 	lbs_deb_leave(LBS_DEB_HOST);
+@@ -297,17 +304,19 @@ int lbs_process_command_response(struct lbs_private *priv, u8 *data, u32 len)
+ 	}
+ 
+ 	resp = (void *)data;
+-	curcmd = le16_to_cpu(priv->cur_cmd->cmdbuf->command);
+-	respcmd = le16_to_cpu(resp->command);
+-	result = le16_to_cpu(resp->result);
++	curcmd = get_unaligned_le16(&priv->cur_cmd->cmdbuf->command);
++	respcmd = get_unaligned_le16(&resp->command);
++	result = get_unaligned_le16(&resp->result);
+ 
+ 	lbs_deb_cmd("CMD_RESP: response 0x%04x, seq %d, size %d\n",
+-		     respcmd, le16_to_cpu(resp->seqnum), len);
++		     respcmd, get_unaligned_le16(&resp->seqnum), len);
+ 	lbs_deb_hex(LBS_DEB_CMD, "CMD_RESP", (void *) resp, len);
+ 
+ 	if (resp->seqnum != priv->cur_cmd->cmdbuf->seqnum) {
+ 		lbs_pr_info("Received CMD_RESP with invalid sequence %d (expected %d)\n",
+-			    le16_to_cpu(resp->seqnum), le16_to_cpu(priv->cur_cmd->cmdbuf->seqnum));
++			    get_unaligned_le16(&resp->seqnum),
++			    get_unaligned_le16(&priv->cur_cmd->cmdbuf->
++					       seqnum));
+ 		spin_unlock_irqrestore(&priv->driver_lock, flags);
+ 		ret = -1;
+ 		goto done;
+@@ -323,8 +332,9 @@ int lbs_process_command_response(struct lbs_private *priv, u8 *data, u32 len)
+ 	if (resp->result == cpu_to_le16(0x0004)) {
+ 		/* 0x0004 means -EAGAIN. Drop the response, let it time out
+ 		   and be resubmitted */
+-		lbs_pr_info("Firmware returns DEFER to command %x. Will let it time out...\n",
+-			    le16_to_cpu(resp->command));
++		lbs_pr_info("Firmware returns DEFER to command %x. "
++			    "Will let it time out...\n",
++			    get_unaligned_le16(&resp->command));
+ 		spin_unlock_irqrestore(&priv->driver_lock, flags);
+ 		ret = -1;
+ 		goto done;
+@@ -344,7 +354,7 @@ int lbs_process_command_response(struct lbs_private *priv, u8 *data, u32 len)
+ 
+ 	if (respcmd == CMD_RET(CMD_802_11_PS_MODE)) {
+ 		struct cmd_ds_802_11_ps_mode *psmode = (void *) &resp[1];
+-		u16 action = le16_to_cpu(psmode->action);
++		u16 action = get_unaligned_le16(&psmode->action);
+ 
+ 		lbs_deb_host(
+ 		       "CMD_RESP: PS_MODE cmd reply result 0x%x, action 0x%x\n",
+diff --git a/drivers/net/wireless/libertas/debugfs.c b/drivers/net/wireless/libertas/debugfs.c
+index 811ffc3..79f2d39 100644
+--- a/drivers/net/wireless/libertas/debugfs.c
++++ b/drivers/net/wireless/libertas/debugfs.c
+@@ -1,3 +1,4 @@
++#include <asm/unaligned.h>
+ #include <linux/module.h>
+ #include <linux/dcache.h>
+ #include <linux/debugfs.h>
+@@ -193,7 +194,7 @@ static void *lbs_tlv_find(uint16_t tlv_type, const uint8_t *tlv, uint16_t size)
+ 			return NULL;
+ 		if (tlv_h->type == cpu_to_le16(tlv_type))
+ 			return tlv_h;
+-		length = le16_to_cpu(tlv_h->len) + sizeof(*tlv_h);
++		length = get_unaligned_le16(&tlv_h->len) + sizeof(*tlv_h);
+ 		pos += length;
+ 		tlv += length;
+ 	}
+@@ -236,7 +237,7 @@ static ssize_t lbs_threshold_read(uint16_t tlv_type, uint16_t event_mask,
+ 	if (got) {
+ 		value = got->value;
+ 		freq  = got->freq;
+-		events = le16_to_cpu(subscribed->events);
++		events = get_unaligned_le16(&subscribed->events);
+ 
+ 		pos += snprintf(buf, len, "%d %d %d\n", value, freq,
+ 				!!(events & event_mask));
+@@ -294,7 +295,7 @@ static ssize_t lbs_threshold_write(uint16_t tlv_type, uint16_t event_mask,
+ 	if (ret)
+ 		goto out_events;
+ 
+-	curr_mask = le16_to_cpu(events->events);
++	curr_mask = get_unaligned_le16(&events->events);
+ 
+ 	if (new_mask)
+ 		new_mask = curr_mask | event_mask;
+diff --git a/drivers/net/wireless/libertas/ethtool.c b/drivers/net/wireless/libertas/ethtool.c
+index b118a35..2b5eef5 100644
+--- a/drivers/net/wireless/libertas/ethtool.c
++++ b/drivers/net/wireless/libertas/ethtool.c
+@@ -1,3 +1,4 @@
++#include <asm/unaligned.h>
+ #include <linux/netdevice.h>
+ #include <linux/ethtool.h>
+ #include <linux/delay.h>
+@@ -90,14 +91,16 @@ static void lbs_ethtool_get_stats(struct net_device *dev,
+ 		return;
+ 	}
+ 
+-	priv->mstats.fwd_drop_rbt = le32_to_cpu(mesh_access.data[0]);
+-	priv->mstats.fwd_drop_ttl = le32_to_cpu(mesh_access.data[1]);
+-	priv->mstats.fwd_drop_noroute = le32_to_cpu(mesh_access.data[2]);
+-	priv->mstats.fwd_drop_nobuf = le32_to_cpu(mesh_access.data[3]);
+-	priv->mstats.fwd_unicast_cnt = le32_to_cpu(mesh_access.data[4]);
+-	priv->mstats.fwd_bcast_cnt = le32_to_cpu(mesh_access.data[5]);
+-	priv->mstats.drop_blind = le32_to_cpu(mesh_access.data[6]);
+-	priv->mstats.tx_failed_cnt = le32_to_cpu(mesh_access.data[7]);
++	priv->mstats.fwd_drop_rbt = get_unaligned_le32(&mesh_access.data[0]);
++	priv->mstats.fwd_drop_ttl = get_unaligned_le32(&mesh_access.data[1]);
++	priv->mstats.fwd_drop_noroute =
++		get_unaligned_le32(&mesh_access.data[2]);
++	priv->mstats.fwd_drop_nobuf = get_unaligned_le32(&mesh_access.data[3]);
++	priv->mstats.fwd_unicast_cnt =
++		get_unaligned_le32(&mesh_access.data[4]);
++	priv->mstats.fwd_bcast_cnt = get_unaligned_le32(&mesh_access.data[5]);
++	priv->mstats.drop_blind = get_unaligned_le32(&mesh_access.data[6]);
++	priv->mstats.tx_failed_cnt = get_unaligned_le32(&mesh_access.data[7]);
+ 
+ 	data[0] = priv->mstats.fwd_drop_rbt;
+ 	data[1] = priv->mstats.fwd_drop_ttl;
+diff --git a/drivers/net/wireless/libertas/main.c b/drivers/net/wireless/libertas/main.c
+index 89575e4..e0448d7 100644
+--- a/drivers/net/wireless/libertas/main.c
++++ b/drivers/net/wireless/libertas/main.c
+@@ -4,6 +4,7 @@
+   * thread etc..
+   */
+ 
++#include <asm/unaligned.h>
+ #include <linux/moduleparam.h>
+ #include <linux/delay.h>
+ #include <linux/etherdevice.h>
+@@ -232,7 +233,8 @@ static ssize_t lbs_anycast_get(struct device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	return snprintf(buf, 12, "0x%X\n", le32_to_cpu(mesh_access.data[0]));
++	return snprintf(buf, 12, "0x%X\n",
++			get_unaligned_le32(&mesh_access.data[0]));
+ }
+ 
+ /**
+@@ -829,7 +831,8 @@ static int lbs_thread(void *data)
+ 			if (++priv->nr_retries > 3) {
+ 				lbs_pr_info("Excessive timeouts submitting "
+ 					"command 0x%04x\n",
+-					le16_to_cpu(cmdnode->cmdbuf->command));
++					get_unaligned_le16(&cmdnode->cmdbuf->
++							   command));
+ 				lbs_complete_command(priv, cmdnode, -ETIMEDOUT);
+ 				priv->nr_retries = 0;
+ 				if (priv->reset_card)
+@@ -839,7 +842,8 @@ static int lbs_thread(void *data)
+ 				priv->dnld_sent = DNLD_RES_RECEIVED;
+ 				lbs_pr_info("requeueing command 0x%04x due "
+ 					"to timeout (#%d)\n",
+-					le16_to_cpu(cmdnode->cmdbuf->command),
++					get_unaligned_le16(&cmdnode->cmdbuf->
++							   command),
+ 					priv->nr_retries);
+ 
+ 				/* Stick it back at the _top_ of the pending queue
+@@ -1041,7 +1045,7 @@ static void command_timer_fn(unsigned long data)
+ 		goto out;
+ 
+ 	lbs_pr_info("command 0x%04x timed out\n",
+-		le16_to_cpu(priv->cur_cmd->cmdbuf->command));
++		get_unaligned_le16(&priv->cur_cmd->cmdbuf->command));
+ 
+ 	priv->cmd_timed_out = 1;
+ 	wake_up_interruptible(&priv->waitq);
+diff --git a/drivers/net/wireless/libertas/persistcfg.c b/drivers/net/wireless/libertas/persistcfg.c
+index 18fe29f..a4bcd2b 100644
+--- a/drivers/net/wireless/libertas/persistcfg.c
++++ b/drivers/net/wireless/libertas/persistcfg.c
+@@ -1,3 +1,4 @@
++#include <asm/unaligned.h>
+ #include <linux/moduleparam.h>
+ #include <linux/delay.h>
+ #include <linux/etherdevice.h>
+@@ -48,7 +49,7 @@ static ssize_t bootflag_get(struct device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	return snprintf(buf, 12, "%d\n", le32_to_cpu(defs.bootflag));
++	return snprintf(buf, 12, "%d\n", get_unaligned_le32(&defs.bootflag));
+ }
+ 
+ /**
+@@ -143,7 +144,7 @@ static ssize_t channel_get(struct device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	return snprintf(buf, 12, "%d\n", le16_to_cpu(defs.channel));
++	return snprintf(buf, 12, "%d\n", get_unaligned_le16(&defs.channel));
+ }
+ 
+ /**
+diff --git a/drivers/net/wireless/libertas/rx.c b/drivers/net/wireless/libertas/rx.c
+index 65f02cc..8ab7646 100644
+--- a/drivers/net/wireless/libertas/rx.c
++++ b/drivers/net/wireless/libertas/rx.c
+@@ -1,6 +1,7 @@
+ /**
+   * This file contains the handling of RX in wlan driver.
+   */
++#include <asm/unaligned.h>
+ #include <linux/etherdevice.h>
+ #include <linux/types.h>
+ 
+diff --git a/drivers/net/wireless/libertas/scan.c b/drivers/net/wireless/libertas/scan.c
+index 6c95af3..1a91ecb 100644
+--- a/drivers/net/wireless/libertas/scan.c
++++ b/drivers/net/wireless/libertas/scan.c
+@@ -332,7 +332,7 @@ static int lbs_do_scan(struct lbs_private *priv, uint8_t bsstype,
+ 		    tlv - scan_cmd->tlvbuffer);
+ 
+ 	ret = __lbs_cmd(priv, CMD_802_11_SCAN, &scan_cmd->hdr,
+-			le16_to_cpu(scan_cmd->hdr.size),
++			get_unaligned_le16(&scan_cmd->hdr.size),
+ 			lbs_ret_80211_scan, 0);
+ 
+ out:
+@@ -637,7 +637,7 @@ static int lbs_process_bss(struct bss_descriptor *bss,
+ 
+ 		case WLAN_EID_IBSS_PARAMS:
+ 			ibss = (struct ieee_ie_ibss_param_set *) pos;
+-			bss->atimwindow = ibss->atimwindow;
++			bss->atimwindow = get_unaligned_le16(&ibss->atimwindow);
+ 			memcpy(&bss->ss.ibss, ibss, sizeof(*ibss));
+ 			lbs_deb_scan("got IBSS IE\n");
+ 			break;
+@@ -1133,7 +1133,7 @@ static int lbs_ret_80211_scan(struct lbs_private *priv, unsigned long dummy,
+ 	bytesleft = get_unaligned_le16(&scanresp->bssdescriptsize);
+ 	lbs_deb_scan("SCAN_RESP: bssdescriptsize %d\n", bytesleft);
+ 
+-	scanrespsize = le16_to_cpu(resp->size);
++	scanrespsize = get_unaligned_le16(&resp->size);
+ 	lbs_deb_scan("SCAN_RESP: scan results %d\n", scanresp->nr_sets);
+ 
+ 	bssinfo = scanresp->bssdesc_and_tlvbuffer;
+diff --git a/drivers/net/wireless/libertas/tx.c b/drivers/net/wireless/libertas/tx.c
+index 160cfd8..1ca7f26 100644
+--- a/drivers/net/wireless/libertas/tx.c
++++ b/drivers/net/wireless/libertas/tx.c
+@@ -1,6 +1,7 @@
+ /**
+   * This file contains the handling of TX in wlan driver.
+   */
++#include <asm/unaligned.h>
+ #include <linux/netdevice.h>
+ #include <linux/etherdevice.h>
+ 
+@@ -141,9 +142,11 @@ int lbs_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	lbs_deb_hex(LBS_DEB_TX, "txpd", (u8 *) &txpd, sizeof(struct txpd));
+ 
+-	lbs_deb_hex(LBS_DEB_TX, "Tx Data", (u8 *) p802x_hdr, le16_to_cpu(txpd->tx_packet_length));
++	lbs_deb_hex(LBS_DEB_TX, "Tx Data", (u8 *) p802x_hdr,
++		    get_unaligned_le16(&txpd->tx_packet_length));
+ 
+-	memcpy(&txpd[1], p802x_hdr, le16_to_cpu(txpd->tx_packet_length));
++	memcpy(&txpd[1], p802x_hdr,
++	       get_unaligned_le16(&txpd->tx_packet_length));
+ 
+ 	spin_lock_irqsave(&priv->driver_lock, flags);
+ 	priv->tx_pending_len = pkt_len + sizeof(struct txpd);
+diff --git a/drivers/net/wireless/libertas/wext.c b/drivers/net/wireless/libertas/wext.c
+index 8bc1907..2600e0b 100644
+--- a/drivers/net/wireless/libertas/wext.c
++++ b/drivers/net/wireless/libertas/wext.c
+@@ -1,6 +1,7 @@
+ /**
+   * This file contains ioctl functions
+   */
++#include <asm/unaligned.h>
+ #include <linux/ctype.h>
+ #include <linux/delay.h>
+ #include <linux/if.h>
+@@ -836,7 +837,7 @@ static struct iw_statistics *lbs_get_wireless_stats(struct net_device *dev)
+ 	log.hdr.size = cpu_to_le16(sizeof(log));
+ 	lbs_cmd_with_response(priv, CMD_802_11_GET_LOG, &log);
+ 
+-	tx_retries = le32_to_cpu(log.retry);
++	tx_retries = get_unaligned_le32(&log.retry);
+ 
+ 	if (tx_retries > 75)
+ 		tx_qual = (90 - tx_retries) * POOR / 15;
+@@ -852,9 +853,9 @@ static struct iw_statistics *lbs_get_wireless_stats(struct net_device *dev)
+ 		    (PERFECT - VERY_GOOD) / 50 + VERY_GOOD;
+ 	quality = min(quality, tx_qual);
+ 
+-	priv->wstats.discard.code = le32_to_cpu(log.wepundecryptable);
++	priv->wstats.discard.code = get_unaligned_le32(&log.wepundecryptable);
+ 	priv->wstats.discard.retries = tx_retries;
+-	priv->wstats.discard.misc = le32_to_cpu(log.ackfailure);
++	priv->wstats.discard.misc = get_unaligned_le32(&log.ackfailure);
+ 
+ 	/* Calculate quality */
+ 	priv->wstats.qual.qual = min_t(u8, quality, 100);

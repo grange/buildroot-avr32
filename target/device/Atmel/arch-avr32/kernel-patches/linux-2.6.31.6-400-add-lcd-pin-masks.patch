@@ -1,0 +1,31 @@
+ arch/avr32/boards/atngw100/setup.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/arch/avr32/boards/atngw100/setup.c b/arch/avr32/boards/atngw100/setup.c
+index bc299fb..ce04792 100644
+--- a/arch/avr32/boards/atngw100/setup.c
++++ b/arch/avr32/boards/atngw100/setup.c
+@@ -29,6 +29,23 @@
+ #include <mach/init.h>
+ #include <mach/portmux.h>
+ 
++#define ATMEL_LCDC_NGW100_PINMASK (					\
++		ATMEL_LCDC(PC, HSYNC)  | ATMEL_LCDC(PC, PCLK)	|	\
++		ATMEL_LCDC(PC, VSYNC)  | ATMEL_LCDC(PC, DATA5)	|	\
++		ATMEL_LCDC(PD, DATA6)  | ATMEL_LCDC(PD, DATA7)	|	\
++		ATMEL_LCDC(PD, DATA13) | ATMEL_LCDC(PD, DATA14)	|	\
++		ATMEL_LCDC(PD, DATA15) | ATMEL_LCDC(PD, DATA22) |	\
++		ATMEL_LCDC(PD, DATA23) | ATMEL_LCDC(PE, DVAL) 	|	\
++		ATMEL_LCDC(PE, MODE)   | ATMEL_LCDC(PE, DATA0)	|	\
++		ATMEL_LCDC(PE, DATA1)  | ATMEL_LCDC(PE, DATA2)	|	\
++		ATMEL_LCDC(PE, DATA3)  | ATMEL_LCDC(PE, DATA4)	|	\
++		ATMEL_LCDC(PE, DATA8)  | ATMEL_LCDC(PE, DATA9) 	|	\
++		ATMEL_LCDC(PE, DATA10) | ATMEL_LCDC(PE, DATA11)	|	\
++		ATMEL_LCDC(PE, DATA12) | ATMEL_LCDC(PE, DATA16)	|	\
++		ATMEL_LCDC(PE, DATA17) | ATMEL_LCDC(PE, DATA18)	|	\
++		ATMEL_LCDC(PE, DATA19) | ATMEL_LCDC(PE, DATA20)	|	\
++		ATMEL_LCDC(PE, DATA21))
++
+ /* Oscillator frequencies. These are board-specific */
+ unsigned long at32_board_osc_rates[3] = {
+ 	[0] = 32768,	/* 32.768 kHz on RTC osc */
