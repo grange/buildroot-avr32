@@ -1,0 +1,16 @@
+ arch/avr32/boards/atngw100/setup.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/avr32/boards/atngw100/setup.c b/arch/avr32/boards/atngw100/setup.c
+index b43b6c8..7532e40 100644
+--- a/arch/avr32/boards/atngw100/setup.c
++++ b/arch/avr32/boards/atngw100/setup.c
+@@ -260,7 +260,7 @@ static int __init atngw100_init(void)
+ 	at32_add_device_usba(0, NULL);
+ 
+ 	at32_add_device_psif(0);
+-	at32_add_device_psif(1);
++	//at32_add_device_psif(1);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(ngw_leds); i++) {
+ 		at32_select_gpio(ngw_leds[i].gpio,

@@ -1,0 +1,35 @@
+ arch/avr32/boards/atngw100/setup.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/arch/avr32/boards/atngw100/setup.c b/arch/avr32/boards/atngw100/setup.c
+index 24ac1a8..d80bcc8 100644
+--- a/arch/avr32/boards/atngw100/setup.c
++++ b/arch/avr32/boards/atngw100/setup.c
+@@ -29,6 +29,8 @@
+ #include <mach/init.h>
+ #include <mach/portmux.h>
+ 
++#include <sound/atmel-ac97c.h>
++
+ #include <linux/fb.h>
+ #include <video/atmel_lcdc.h>
+ 
+@@ -249,6 +251,10 @@ static struct i2c_board_info __initdata i2c_info[] = {
+ 	/* NOTE:  original ATtiny24 firmware is at address 0x0b */
+ };
+ 
++static struct ac97c_platform_data __initdata ac97c0_data = {
++	.reset_pin		= GPIO_PIN_PB(18), // change to whatever pin you want, i.e. GPIO_PIN_PB(18)
++};
++
+ static int __init atngw100_init(void)
+ {
+ 	unsigned	i;
+@@ -267,6 +273,7 @@ static int __init atngw100_init(void)
+ 	at32_add_device_mci(0, &mci0_data);
+ 	at32_add_device_mci(0, &mci1_data);
+ 	at32_add_device_usba(0, NULL);
++	at32_add_device_ac97c(0, &ac97c0_data, AC97C_BOTH);
+ 
+ 	at32_add_device_psif(0);
+ 	//at32_add_device_psif(1);
