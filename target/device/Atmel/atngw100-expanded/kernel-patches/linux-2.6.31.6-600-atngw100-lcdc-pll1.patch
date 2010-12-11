@@ -1,0 +1,21 @@
+ arch/avr32/mach-at32ap/at32ap700x.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/avr32/mach-at32ap/at32ap700x.c b/arch/avr32/mach-at32ap/at32ap700x.c
+index ad959e2..2d5a89f 100644
+--- a/arch/avr32/mach-at32ap/at32ap700x.c
++++ b/arch/avr32/mach-at32ap/at32ap700x.c
+@@ -1494,8 +1494,11 @@ at32_add_device_lcdc(unsigned int id, struct atmel_lcdfb_info *data,
+ 		porte_mask = (pin_mask >> 32) & 0x0007ffff;
+ 		select_peripheral(PIOE, porte_mask, PERIPH_B, 0);
+ 
+-		clk_set_parent(&atmel_lcdfb0_pixclk, &pll0);
+-		clk_set_rate(&atmel_lcdfb0_pixclk, clk_get_rate(&pll0));
++		clk_set_parent(&pll1, &osc1);
++		clk_set_parent(&atmel_lcdfb0_pixclk, &pll1);
++
++		clk_set_rate(&pll1, 192000000);
++		clk_set_rate(&atmel_lcdfb0_pixclk, clk_get_rate(&pll1));
+ 		break;
+ 
+ 	default:
