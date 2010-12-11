@@ -24,7 +24,7 @@ index 7532e40..24ac1a8 100644
  
  	at32_add_device_spi(0, spi0_board_info, ARRAY_SIZE(spi0_board_info));
  	at32_add_device_mci(0, &mci0_data);
-+	at32_add_device_mci(0, &mci1_data);
++	at32_add_device_mci(1, &mci1_data);
  	at32_add_device_usba(0, NULL);
  
  	at32_add_device_psif(0);
